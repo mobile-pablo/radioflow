@@ -3,6 +3,7 @@ import 'package:domain/domain.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:radioflow/l10n/app_localizations.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../app/di.dart';
 import '../../../../shared/widgets/station_tile.dart';
@@ -57,16 +58,56 @@ class BrowsePage extends StatefulWidget {
 }
 
 class _BrowsePageState extends State<BrowsePage> {
+  static const String _kView = 'browse.view';
+  static const String _kTag = 'browse.tag';
+  static const String _kCountry = 'browse.country';
+
+  final SharedPreferences _prefs = getIt<SharedPreferences>();
+
   bool _countriesView = false;
   String? _tag;
   String? _countryCode;
-
   Future<List<Station>>? _results;
+
+  @override
+  void initState() {
+    super.initState();
+    _countriesView = _prefs.getString(_kView) == 'paises';
+    _tag = _prefs.getString(_kTag);
+    _countryCode = _prefs.getString(_kCountry);
+    _ensureSelectionForCurrentView();
+  }
+
+  void _ensureSelectionForCurrentView() {
+    if (_countriesView) {
+      _countryCode ??= _countries.first.$1;
+      _prefs.setString(_kCountry, _countryCode!);
+      _results = getIt<StationRepository>().getStations(
+        countryCode: _countryCode!,
+        limit: 100,
+      );
+    } else {
+      _tag ??= _genres.first;
+      _prefs.setString(_kTag, _tag!);
+      _results = getIt<StationRepository>().getStations(
+        tag: _tag!.toLowerCase(),
+        limit: 100,
+      );
+    }
+  }
+
+  void _onSelectView(bool countries) {
+    setState(() {
+      _countriesView = countries;
+      _prefs.setString(_kView, countries ? 'paises' : 'categorias');
+      _ensureSelectionForCurrentView();
+    });
+  }
 
   void _selectTag(String genre) {
     setState(() {
       _tag = genre;
-      _countryCode = null;
+      _prefs.setString(_kTag, genre);
       _results = getIt<StationRepository>().getStations(
         tag: genre.toLowerCase(),
         limit: 100,
@@ -77,7 +118,7 @@ class _BrowsePageState extends State<BrowsePage> {
   void _selectCountry(String code) {
     setState(() {
       _countryCode = code;
-      _tag = null;
+      _prefs.setString(_kCountry, code);
       _results = getIt<StationRepository>().getStations(
         countryCode: code,
         limit: 100,
@@ -104,8 +145,7 @@ class _BrowsePageState extends State<BrowsePage> {
               left: l10n.navCategories,
               right: l10n.navCountries,
               rightSelected: _countriesView,
-              onSelect: (countries) =>
-                  setState(() => _countriesView = countries),
+              onSelect: _onSelectView,
             ),
           ),
           SizedBox(
