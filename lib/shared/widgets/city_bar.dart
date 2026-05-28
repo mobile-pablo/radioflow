@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:core/core.dart';
 import 'package:domain/domain.dart';
 import 'package:flutter/material.dart';
@@ -6,6 +8,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../app/di.dart';
 import '../../features/discover/presentation/widgets/station_list_sheet.dart';
 import '../../features/player/bloc/player_bloc.dart';
+import '../city_name_service.dart';
 import '../stations_holder.dart';
 
 class DragHandle extends StatelessWidget {
@@ -24,6 +27,44 @@ class DragHandle extends StatelessWidget {
   }
 }
 
+class SwipeUpToOpen extends StatefulWidget {
+  const SwipeUpToOpen({super.key, required this.onOpen, required this.child});
+
+  final VoidCallback onOpen;
+  final Widget child;
+
+  @override
+  State<SwipeUpToOpen> createState() => _SwipeUpToOpenState();
+}
+
+class _SwipeUpToOpenState extends State<SwipeUpToOpen> {
+  double _dy = 0;
+  bool _fired = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: widget.onOpen,
+      onVerticalDragStart: (_) {
+        _dy = 0;
+        _fired = false;
+      },
+      onVerticalDragUpdate: (details) {
+        _dy += details.primaryDelta ?? 0;
+        if (!_fired && _dy < -24) {
+          _fired = true;
+          widget.onOpen();
+        }
+      },
+      onVerticalDragEnd: (details) {
+        if (!_fired && (details.primaryVelocity ?? 0) < 0) widget.onOpen();
+      },
+      child: widget.child,
+    );
+  }
+}
+
 class CityBar extends StatelessWidget {
   const CityBar({super.key});
 
@@ -37,6 +78,22 @@ class CityBar extends StatelessWidget {
     return '$hh:$mm';
   }
 
+  int _nearbyCount(Station station, List<Station> all) {
+    final geo = station.geo;
+    if (geo == null) {
+      return all.where((s) => s.country == station.country).length;
+    }
+    const radius = 0.55;
+    final cosLat = math.cos(geo.latitude * math.pi / 180);
+    return all.where((s) {
+      final g = s.geo;
+      if (g == null) return false;
+      final dLat = g.latitude - geo.latitude;
+      final dLng = (g.longitude - geo.longitude) * cosLat;
+      return dLat * dLat + dLng * dLng <= radius * radius;
+    }).length;
+  }
+
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
@@ -46,22 +103,16 @@ class CityBar extends StatelessWidget {
         final station = player.station;
         if (station == null) return const SizedBox.shrink();
         final all = getIt<StationsHolder>().stations;
-        final hasRegion = station.stateRegion?.isNotEmpty ?? false;
-        final place = hasRegion ? station.stateRegion! : station.name;
+        final fallback = (station.stateRegion?.isNotEmpty ?? false)
+            ? station.stateRegion!
+            : station.country;
         final flag = station.countryCode.isEmpty
             ? ''
             : '${Country.flagEmoji(station.countryCode)} ';
-        final count = hasRegion
-            ? all.where((s) => s.stateRegion == station.stateRegion).length
-            : all.where((s) => s.country == station.country).length;
-        void open() =>
-            StationListSheet.show(context, station: station, stations: all);
-        return GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTap: open,
-          onVerticalDragEnd: (details) {
-            if ((details.primaryVelocity ?? 0) < 0) open();
-          },
+        final count = _nearbyCount(station, all);
+        return SwipeUpToOpen(
+          onOpen: () =>
+              StationListSheet.show(context, station: station, stations: all),
           child: Container(
             padding: const EdgeInsets.fromLTRB(
               AppSpacing.xl,
@@ -70,11 +121,8 @@ class CityBar extends StatelessWidget {
               AppSpacing.md,
             ),
             decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [Colors.transparent, Color(0xCC000000)],
-              ),
+              color: AppColors.surfaceAlt,
+              border: Border(top: BorderSide(color: AppColors.line)),
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -104,11 +152,20 @@ class CityBar extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            place,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: textTheme.titleLarge,
+                          FutureBuilder<String?>(
+                            future: getIt<CityNameService>().cityFor(station),
+                            builder: (context, snapshot) {
+                              final city =
+                                  (snapshot.data?.isNotEmpty ?? false)
+                                  ? snapshot.data!
+                                  : fallback;
+                              return Text(
+                                city,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: textTheme.titleLarge,
+                              );
+                            },
                           ),
                           if (station.country.isNotEmpty)
                             Text(

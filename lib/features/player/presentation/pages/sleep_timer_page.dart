@@ -134,19 +134,35 @@ class _OptionRow extends StatelessWidget {
     final label = minutes == 0 ? l10n.sleepOff : l10n.sleepMinutes(minutes);
     return InkWell(
       onTap: onTap,
-      child: Padding(
+      child: Container(
+        color: selected
+            ? AppColors.accent.withValues(alpha: 0.06)
+            : Colors.transparent,
         padding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.lg,
           vertical: AppSpacing.md,
         ),
         child: Row(
           children: [
-            Icon(
-              selected
-                  ? Icons.radio_button_checked_rounded
-                  : Icons.radio_button_unchecked_rounded,
-              size: 20,
-              color: selected ? AppColors.accent : AppColors.textFaint,
+            Container(
+              decoration: selected
+                  ? BoxDecoration(
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.accent.withValues(alpha: 0.6),
+                          blurRadius: 12,
+                        ),
+                      ],
+                    )
+                  : null,
+              child: Icon(
+                selected
+                    ? Icons.radio_button_checked_rounded
+                    : Icons.radio_button_unchecked_rounded,
+                size: 20,
+                color: selected ? AppColors.accent : AppColors.textFaint,
+              ),
             ),
             const SizedBox(width: AppSpacing.lg),
             Text(

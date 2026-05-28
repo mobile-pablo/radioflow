@@ -28,6 +28,7 @@ class Map3dView extends StatefulWidget {
 class _Map3dViewState extends State<Map3dView> {
   static const String _sourceId = 'rf-stations';
   static const String _clusterLayer = 'rf-clusters';
+  static const String _glowLayer = 'rf-glow';
   static const String _pointLayer = 'rf-points';
 
   MapboxMap? _map;
@@ -108,7 +109,11 @@ class _Map3dViewState extends State<Map3dView> {
     await map.logo.updateSettings(LogoSettings(enabled: false));
     await map.attribution.updateSettings(AttributionSettings(enabled: false));
     await map.compass.updateSettings(
-      CompassSettings(position: OrnamentPosition.TOP_LEFT),
+      CompassSettings(
+        position: OrnamentPosition.TOP_LEFT,
+        marginTop: 130,
+        marginLeft: 16,
+      ),
     );
     await map.style.setProjection(
       StyleProjection(name: StyleProjectionName.globe),
@@ -186,12 +191,32 @@ class _Map3dViewState extends State<Map3dView> {
       );
       await map.style.addLayer(
         CircleLayer(
-          id: _pointLayer,
+          id: _glowLayer,
           sourceId: _sourceId,
           circleColor: 0xFF38E1B0,
-          circleRadius: 5,
+          circleRadius: 13,
+          circleBlur: 1,
+          circleOpacity: 0.45,
+        ),
+      );
+      await map.style.setStyleLayerProperty(
+        _glowLayer,
+        'filter',
+        jsonEncode([
+          '!',
+          ['has', 'point_count'],
+        ]),
+      );
+      await map.style.addLayer(
+        CircleLayer(
+          id: _pointLayer,
+          sourceId: _sourceId,
+          circleColor: 0xFF7FF0DA,
+          circleRadius: 4,
+          circleBlur: 0.3,
+          circleOpacity: 0.95,
           circleStrokeColor: 0xFF001A12,
-          circleStrokeWidth: 1,
+          circleStrokeWidth: 0.5,
         ),
       );
       await map.style.setStyleLayerProperty(

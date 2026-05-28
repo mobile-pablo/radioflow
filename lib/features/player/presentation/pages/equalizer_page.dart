@@ -202,6 +202,14 @@ class _PresetChip extends StatelessWidget {
                 ? AppColors.accent.withValues(alpha: 0.35)
                 : AppColors.line,
           ),
+          boxShadow: selected
+              ? [
+                  BoxShadow(
+                    color: AppColors.accent.withValues(alpha: 0.3),
+                    blurRadius: 18,
+                  ),
+                ]
+              : null,
         ),
         child: Text(
           label,
