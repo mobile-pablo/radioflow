@@ -6,6 +6,7 @@ import 'package:radioflow/l10n/app_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../app/di.dart';
+import '../../../../shared/widgets/skeleton_list.dart';
 import '../../../../shared/widgets/station_tile.dart';
 import '../../../favorites/widgets/favorite_button.dart';
 import '../../../player/bloc/player_bloc.dart';
@@ -207,7 +208,7 @@ class _Results extends StatelessWidget {
       future: future,
       builder: (context, snapshot) {
         if (snapshot.connectionState != ConnectionState.done) {
-          return const Center(child: CircularProgressIndicator());
+          return const SkeletonList();
         }
         final stations = snapshot.data ?? const [];
         if (stations.isEmpty) {
