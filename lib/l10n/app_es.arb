@@ -105,6 +105,13 @@
   },
   "visitWebsite": "Visitar sitio web",
   "showOnGlobe": "Mostrar en el globo",
+  "stationsIn": "Emisoras en {place}",
+  "@stationsIn": {
+    "placeholders": {
+      "place": { "type": "String" }
+    }
+  },
+  "nearbyStations": "Emisoras cercanas",
   "nearMe": "Emisoras cerca de mí",
   "locationDenied": "Permiso de ubicación denegado",
   "locationUnavailable": "No se pudo obtener tu ubicación",

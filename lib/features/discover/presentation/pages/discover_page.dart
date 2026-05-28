@@ -17,6 +17,7 @@ import '../widgets/cluster_sheet.dart';
 import '../../../../shared/widgets/share_sheet.dart';
 import '../widgets/filter_sheet.dart';
 import '../widgets/map3d_view.dart';
+import '../widgets/station_list_sheet.dart';
 import '../widgets/station_search_delegate.dart';
 
 class DiscoverPage extends StatelessWidget {
@@ -545,19 +546,29 @@ class _CityBanner extends StatelessWidget {
       left: 0,
       right: 0,
       bottom: 0,
-      child: IgnorePointer(
-        child: BlocBuilder<PlayerBloc, PlayerState>(
-          buildWhen: (a, b) => a.station != b.station,
-          builder: (context, player) {
-            final station = player.station;
-            if (station == null) return const SizedBox.shrink();
-            final place = (station.stateRegion?.isNotEmpty ?? false)
-                ? station.stateRegion!
-                : station.name;
-            final flag = station.countryCode.isEmpty
-                ? null
-                : Country.flagEmoji(station.countryCode);
-            return Container(
+      child: BlocBuilder<PlayerBloc, PlayerState>(
+        buildWhen: (a, b) => a.station != b.station,
+        builder: (context, player) {
+          final station = player.station;
+          if (station == null) return const SizedBox.shrink();
+          final place = (station.stateRegion?.isNotEmpty ?? false)
+              ? station.stateRegion!
+              : station.country;
+          final flag = station.countryCode.isEmpty
+              ? ''
+              : '${Country.flagEmoji(station.countryCode)} ';
+          final all = context.read<MapCubit>().state.stations;
+          final count = (station.stateRegion?.isNotEmpty ?? false)
+              ? all.where((s) => s.stateRegion == station.stateRegion).length
+              : all.where((s) => s.country == station.country).length;
+          return GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () => StationListSheet.show(
+              context,
+              station: station,
+              stations: all,
+            ),
+            child: Container(
               padding: const EdgeInsets.fromLTRB(
                 AppSpacing.xl,
                 AppSpacing.xxl,
@@ -581,14 +592,13 @@ class _CityBanner extends StatelessWidget {
                       color: AppColors.cream,
                       shape: BoxShape.circle,
                     ),
-                    child: flag != null
-                        ? Text(flag, style: const TextStyle(fontSize: 20))
-                        : Text(
-                            station.initials,
-                            style: textTheme.titleMedium?.copyWith(
-                              color: AppColors.ink,
-                            ),
-                          ),
+                    child: Text(
+                      count > 0 ? '$count' : station.initials,
+                      style: textTheme.titleMedium?.copyWith(
+                        color: AppColors.ink,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
                   ),
                   const SizedBox(width: AppSpacing.md),
                   Expanded(
@@ -602,16 +612,19 @@ class _CityBanner extends StatelessWidget {
                           style: textTheme.headlineSmall,
                         ),
                         if (station.country.isNotEmpty)
-                          Text(station.country, style: textTheme.bodySmall),
+                          Text(
+                            '$flag${station.country}',
+                            style: textTheme.bodySmall,
+                          ),
                       ],
                     ),
                   ),
                   Text(_localTime(station), style: textTheme.bodyMedium),
                 ],
               ),
-            );
-          },
-        ),
+            ),
+          );
+        },
       ),
     );
   }

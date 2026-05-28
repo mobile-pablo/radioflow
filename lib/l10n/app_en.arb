@@ -105,6 +105,13 @@
   },
   "visitWebsite": "Visit website",
   "showOnGlobe": "Show on the globe",
+  "stationsIn": "Stations in {place}",
+  "@stationsIn": {
+    "placeholders": {
+      "place": { "type": "String" }
+    }
+  },
+  "nearbyStations": "Nearby stations",
   "nearMe": "Stations near me",
   "locationDenied": "Location permission denied",
   "locationUnavailable": "Couldn't get your location",
