@@ -139,6 +139,7 @@ class _StationsList extends StatelessWidget {
                 builder: (context, playerState) {
                   final activeUuid = playerState.station?.uuid;
                   return ListView.builder(
+                    padding: const EdgeInsets.only(bottom: 150),
                     itemCount: state.stations.length,
                     itemBuilder: (context, index) {
                       final station = state.stations[index];
