@@ -126,5 +126,14 @@
   "welcomeFreeBody": "Con la comunidad abierta de Radio Browser.",
   "welcomeFavTitle": "Guarda tus favoritas",
   "welcomeFavBody": "Todo lo que te gusta, siempre a un toque.",
-  "getStarted": "Empezar"
+  "getStarted": "Empezar",
+  "recommended": "Recomendadas",
+  "recentSearches": "Búsquedas recientes",
+  "clearAll": "Borrar",
+  "searchResults": "{count, plural, =1{1 resultado} other{{count} resultados}}",
+  "@searchResults": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  }
 }

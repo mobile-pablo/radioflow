@@ -126,5 +126,14 @@
   "welcomeFreeBody": "Powered by the open Radio Browser community.",
   "welcomeFavTitle": "Save your favorites",
   "welcomeFavBody": "Everything you love, always one tap away.",
-  "getStarted": "Get Started"
+  "getStarted": "Get Started",
+  "recommended": "Recommended",
+  "recentSearches": "Recent searches",
+  "clearAll": "Clear",
+  "searchResults": "{count, plural, =1{1 result} other{{count} results}}",
+  "@searchResults": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  }
 }
