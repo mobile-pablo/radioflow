@@ -18,7 +18,8 @@ class NowPlayingSheet extends StatelessWidget {
     return showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: AppColors.surface,
+      showDragHandle: false,
+      backgroundColor: Colors.transparent,
       builder: (_) =>
           BlocProvider.value(value: bloc, child: const NowPlayingSheet()),
     );
@@ -26,93 +27,29 @@ class NowPlayingSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-    final l10n = AppLocalizations.of(context);
-    return BlocBuilder<PlayerBloc, PlayerState>(
-      builder: (context, state) {
-        final station = state.station;
-        if (station == null) return const SizedBox.shrink();
-        final location = [
-          station.stateRegion,
-          station.country,
-        ].where((e) => e != null && e.isNotEmpty).join(' · ');
-        return SafeArea(
-          top: false,
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(
-              AppSpacing.xl,
-              AppSpacing.sm,
-              AppSpacing.xl,
-              AppSpacing.xl,
+    return DraggableScrollableSheet(
+      initialChildSize: 0.92,
+      minChildSize: 0.55,
+      maxChildSize: 0.95,
+      expand: false,
+      builder: (context, scrollController) {
+        return DecoratedBox(
+          decoration: const BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.vertical(
+              top: Radius.circular(AppSpacing.radiusSheet),
             ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  station.country.isEmpty
-                      ? l10n.onAir.toUpperCase()
-                      : '${l10n.onAir.toUpperCase()} · ${station.country.toUpperCase()}',
-                  style: textTheme.labelSmall,
-                ),
-                const SizedBox(height: AppSpacing.lg),
-                _ArtCard(station: station, playing: state.isPlaying),
-                const SizedBox(height: AppSpacing.lg),
-                Text(
-                  station.name,
-                  textAlign: TextAlign.center,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: textTheme.headlineSmall?.copyWith(
-                    color: AppColors.accent,
-                  ),
-                ),
-                if (state.track != null) ...[
-                  const SizedBox(height: AppSpacing.xs),
-                  Text(
-                    state.track!,
-                    textAlign: TextAlign.center,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: textTheme.bodyMedium?.copyWith(
-                      color: AppColors.accent,
-                    ),
-                  ),
-                ],
-                if (location.isNotEmpty) ...[
-                  const SizedBox(height: AppSpacing.xs),
-                  Text(location, style: textTheme.bodySmall),
-                ],
-                const SizedBox(height: AppSpacing.lg),
-                _Tags(station: station),
-                const SizedBox(height: AppSpacing.xl),
-                _VolumeRow(volume: state.volume),
-                const SizedBox(height: AppSpacing.xl),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    FavoriteButton(station: station, size: 28),
-                    const SizedBox(width: AppSpacing.xl),
-                    const PlayPauseButton(size: 76, filled: true),
-                    const SizedBox(width: AppSpacing.xl),
-                    _SleepButton(minutes: state.sleepMinutes),
-                  ],
-                ),
-                if (state.status == PlaybackStatus.error) ...[
-                  const SizedBox(height: AppSpacing.lg),
-                  Text(
-                    l10n.stationUnavailable,
-                    style: textTheme.bodySmall?.copyWith(
-                      color: AppColors.danger,
-                    ),
-                  ),
-                ],
-                if (station.homepage != null && station.homepage!.isNotEmpty)
-                  Padding(
-                    padding: const EdgeInsets.only(top: AppSpacing.lg),
-                    child: _HomepageLink(url: station.homepage!),
-                  ),
-              ],
-            ),
+          ),
+          child: BlocBuilder<PlayerBloc, PlayerState>(
+            builder: (context, state) {
+              final station = state.station;
+              if (station == null) return const SizedBox.shrink();
+              return _Content(
+                controller: scrollController,
+                state: state,
+                station: station,
+              );
+            },
           ),
         );
       },
@@ -120,42 +57,145 @@ class NowPlayingSheet extends StatelessWidget {
   }
 }
 
-class _ArtCard extends StatelessWidget {
-  const _ArtCard({required this.station, required this.playing});
+class _Content extends StatelessWidget {
+  const _Content({
+    required this.controller,
+    required this.state,
+    required this.station,
+  });
 
+  final ScrollController controller;
+  final PlayerState state;
   final Station station;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    final l10n = AppLocalizations.of(context);
+    final location = [
+      station.stateRegion,
+      station.country,
+    ].where((e) => e != null && e.isNotEmpty).join(', ');
+    final hasHomepage =
+        station.homepage != null && station.homepage!.isNotEmpty;
+    return ListView(
+      controller: controller,
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.xl,
+        AppSpacing.sm,
+        AppSpacing.xl,
+        AppSpacing.xl,
+      ),
+      children: [
+        Center(
+          child: Container(
+            width: 38,
+            height: 4,
+            margin: const EdgeInsets.only(bottom: AppSpacing.lg),
+            decoration: BoxDecoration(
+              color: AppColors.lineStrong,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+        ),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            StationArtwork(station: station, size: 64, radius: 14),
+            const SizedBox(width: AppSpacing.lg),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    station.country.isEmpty
+                        ? l10n.onAir.toUpperCase()
+                        : '${l10n.onAir.toUpperCase()} · ${station.country.toUpperCase()}',
+                    style: textTheme.labelSmall,
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    station.name,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: textTheme.titleLarge?.copyWith(
+                      color: AppColors.accent,
+                    ),
+                  ),
+                  if (location.isNotEmpty) ...[
+                    const SizedBox(height: 2),
+                    Text(location, style: textTheme.bodySmall),
+                  ],
+                ],
+              ),
+            ),
+            FavoriteButton(station: station, size: 24),
+          ],
+        ),
+        const SizedBox(height: AppSpacing.xl),
+        _TrackCard(track: state.track, playing: state.isPlaying),
+        const SizedBox(height: AppSpacing.xl),
+        const Center(child: PlayPauseButton(size: 76, filled: true)),
+        const SizedBox(height: AppSpacing.lg),
+        _VolumeRow(volume: state.volume),
+        if (state.status == PlaybackStatus.error)
+          Padding(
+            padding: const EdgeInsets.only(top: AppSpacing.md),
+            child: Text(
+              l10n.stationUnavailable,
+              textAlign: TextAlign.center,
+              style: textTheme.bodySmall?.copyWith(color: AppColors.danger),
+            ),
+          ),
+        const SizedBox(height: AppSpacing.lg),
+        const Divider(height: 1),
+        _SleepRow(minutes: state.sleepMinutes),
+        if (hasHomepage)
+          _ActionRow(
+            icon: Icons.open_in_new_rounded,
+            label: l10n.openHomepage,
+            onTap: () => _openHomepage(station.homepage!),
+          ),
+      ],
+    );
+  }
+
+  Future<void> _openHomepage(String url) async {
+    final uri = Uri.tryParse(url);
+    if (uri != null) await launchUrl(uri, mode: LaunchMode.externalApplication);
+  }
+}
+
+class _TrackCard extends StatelessWidget {
+  const _TrackCard({required this.track, required this.playing});
+
+  final String? track;
   final bool playing;
 
   @override
   Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
     return Container(
-      width: 220,
-      height: 220,
+      padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
+        color: AppColors.surfaceAlt,
         borderRadius: BorderRadius.circular(AppSpacing.radiusCard),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.accent.withValues(alpha: playing ? 0.18 : 0),
-            blurRadius: 40,
-            spreadRadius: 4,
-          ),
-        ],
+        border: Border.all(color: AppColors.line),
       ),
-      child: Stack(
-        fit: StackFit.expand,
+      child: Row(
         children: [
-          StationArtwork(
-            station: station,
-            size: 220,
-            radius: AppSpacing.radiusCard,
-          ),
-          Positioned(
-            left: AppSpacing.lg,
-            right: AppSpacing.lg,
-            bottom: AppSpacing.lg,
+          SizedBox(
+            width: 72,
             height: 28,
-            child: IgnorePointer(
-              child: RfEqualizer(playing: playing, barCount: 28),
+            child: RfEqualizer(playing: playing, barCount: 18),
+          ),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Text(
+              track ?? (playing ? 'Live' : ''),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: textTheme.titleMedium,
             ),
           ),
         ],
@@ -164,99 +204,84 @@ class _ArtCard extends StatelessWidget {
   }
 }
 
-class _Tags extends StatelessWidget {
-  const _Tags({required this.station});
+class _ActionRow extends StatelessWidget {
+  const _ActionRow({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    this.value,
+  });
 
-  final Station station;
-
-  @override
-  Widget build(BuildContext context) {
-    final labels = <String>[
-      if (station.primaryTag.isNotEmpty) station.primaryTag,
-      if ((station.bitrate ?? 0) > 0) '${station.bitrate} kbps',
-      if (station.codec != null && station.codec!.isNotEmpty)
-        station.codec!.toUpperCase(),
-    ];
-    if (labels.isEmpty) return const SizedBox.shrink();
-    return Wrap(
-      spacing: AppSpacing.sm,
-      runSpacing: AppSpacing.sm,
-      alignment: WrapAlignment.center,
-      children: labels.map((label) => _Pill(label: label)).toList(),
-    );
-  }
-}
-
-class _Pill extends StatelessWidget {
-  const _Pill({required this.label});
-
+  final IconData icon;
   final String label;
+  final String? value;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.md,
-        vertical: AppSpacing.xs,
+    final textTheme = Theme.of(context).textTheme;
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+        child: Row(
+          children: [
+            Icon(icon, size: 22, color: AppColors.textSecondary),
+            const SizedBox(width: AppSpacing.lg),
+            Expanded(child: Text(label, style: textTheme.titleMedium)),
+            if (value != null) Text(value!, style: textTheme.bodySmall),
+          ],
+        ),
       ),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceAlt,
-        borderRadius: BorderRadius.circular(AppSpacing.radiusPill),
-        border: Border.all(color: AppColors.line),
-      ),
-      child: Text(label, style: Theme.of(context).textTheme.bodySmall),
     );
   }
 }
 
-class _SleepButton extends StatelessWidget {
-  const _SleepButton({required this.minutes});
+class _SleepRow extends StatelessWidget {
+  const _SleepRow({required this.minutes});
 
   final int? minutes;
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final active = minutes != null;
-    return PopupMenuButton<int?>(
-      tooltip: l10n.sleepTimer,
-      icon: Icon(
-        Icons.bedtime_outlined,
-        color: active ? AppColors.accent : AppColors.textMuted,
-      ),
-      onSelected: (value) =>
-          context.read<PlayerBloc>().add(SleepTimerSet(value)),
-      itemBuilder: (context) => [
-        PopupMenuItem<int?>(value: null, child: Text(l10n.sleepOff)),
-        for (final option in const [15, 30, 60])
-          PopupMenuItem<int?>(
-            value: option,
-            child: Text(l10n.sleepMinutes(option)),
-          ),
-      ],
+    final value = minutes == null ? l10n.sleepOff : l10n.sleepMinutes(minutes!);
+    return _ActionRow(
+      icon: Icons.bedtime_outlined,
+      label: l10n.sleepTimer,
+      value: value,
+      onTap: () => _showPicker(context),
     );
   }
-}
 
-class _HomepageLink extends StatelessWidget {
-  const _HomepageLink({required this.url});
-
-  final String url;
-
-  Future<void> _open() async {
-    final uri = Uri.tryParse(url);
-    if (uri == null) return;
-    await launchUrl(uri, mode: LaunchMode.externalApplication);
-  }
-
-  @override
-  Widget build(BuildContext context) {
+  void _showPicker(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    return TextButton.icon(
-      onPressed: _open,
-      icon: const Icon(Icons.open_in_new_rounded, size: 18),
-      label: Text(l10n.openHomepage),
-      style: TextButton.styleFrom(foregroundColor: AppColors.textSecondary),
+    final bloc = context.read<PlayerBloc>();
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: AppColors.surface,
+      builder: (_) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              title: Text(l10n.sleepOff),
+              onTap: () {
+                bloc.add(const SleepTimerSet(null));
+                Navigator.of(context).pop();
+              },
+            ),
+            for (final option in const [15, 30, 60])
+              ListTile(
+                title: Text(l10n.sleepMinutes(option)),
+                onTap: () {
+                  bloc.add(SleepTimerSet(option));
+                  Navigator.of(context).pop();
+                },
+              ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -286,14 +311,6 @@ class _VolumeRow extends StatelessWidget {
           icon: const Icon(Icons.volume_up_rounded),
           onPressed: () =>
               context.read<PlayerBloc>().add(const VolumeNudged(up: true)),
-        ),
-        SizedBox(
-          width: 32,
-          child: Text(
-            '${(volume * 100).round()}',
-            textAlign: TextAlign.end,
-            style: Theme.of(context).textTheme.bodySmall,
-          ),
         ),
       ],
     );
