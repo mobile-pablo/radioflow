@@ -123,10 +123,8 @@ class _DiscoverViewState extends State<_DiscoverView>
             Positioned.fill(
               child: _showGlobe
                   ? Map3dView(
-                      stations: state.stations,
-                      onStationTap: (station) => context.read<PlayerBloc>().add(
-                        PlayStationRequested(station),
-                      ),
+                      clusters: state.globeClusters,
+                      onTapCluster: _onClusterTap,
                     )
                   : _buildMap(context, state),
             ),

@@ -1,92 +1,92 @@
-import 'package:core/core.dart';
-import 'package:domain/domain.dart' as domain;
-import 'package:flutter/widgets.dart';
-import 'package:maplibre/maplibre.dart';
+import 'dart:math' as math;
 
-class Map3dView extends StatelessWidget {
+import 'package:core/core.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_earth_globe/flutter_earth_globe.dart';
+import 'package:flutter_earth_globe/flutter_earth_globe_controller.dart';
+import 'package:flutter_earth_globe/globe_coordinates.dart';
+import 'package:flutter_earth_globe/point.dart' as globe;
+
+import '../../bloc/station_cluster.dart';
+
+class Map3dView extends StatefulWidget {
   const Map3dView({
     super.key,
-    required this.stations,
-    required this.onStationTap,
+    required this.clusters,
+    required this.onTapCluster,
   });
 
-  final List<domain.Station> stations;
-  final void Function(domain.Station station) onStationTap;
+  final List<StationCluster> clusters;
+  final void Function(StationCluster cluster) onTapCluster;
 
-  static const String _style = '''
-{
-  "version": 8,
-  "sources": {
-    "satellite": {
-      "type": "raster",
-      "tiles": ["https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"],
-      "tileSize": 256,
-      "maxzoom": 19,
-      "attribution": "Esri, Maxar, Earthstar Geographics"
-    }
-  },
-  "layers": [
-    {"id": "background", "type": "background", "paint": {"background-color": "#000000"}},
-    {"id": "satellite", "type": "raster", "source": "satellite"}
-  ]
+  @override
+  State<Map3dView> createState() => _Map3dViewState();
 }
-''';
 
-  List<domain.Station> get _geoStations =>
-      stations.where((s) => s.geo != null).toList();
+class _Map3dViewState extends State<Map3dView> {
+  late final FlutterEarthGlobeController _controller =
+      FlutterEarthGlobeController(
+        surface: const AssetImage('assets/textures/earth.jpg'),
+        isRotating: true,
+        rotationSpeed: 0.05,
+        zoom: 0.5,
+        minZoom: 0.1,
+        maxZoom: 4,
+        isBackgroundFollowingSphereRotation: true,
+      );
 
-  void _handleClick(double lon, double lat) {
-    domain.Station? best;
-    var bestDistance = double.infinity;
-    for (final station in _geoStations) {
-      final geo = station.geo!;
-      final dLon = geo.longitude - lon;
-      final dLat = geo.latitude - lat;
-      final distance = dLon * dLon + dLat * dLat;
-      if (distance < bestDistance) {
-        bestDistance = distance;
-        best = station;
-      }
+  final Set<String> _pointIds = {};
+
+  @override
+  void initState() {
+    super.initState();
+    _populate();
+  }
+
+  @override
+  void didUpdateWidget(Map3dView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!identical(oldWidget.clusters, widget.clusters)) _populate();
+  }
+
+  void _populate() {
+    for (final id in _pointIds) {
+      _controller.removePoint(id);
     }
-    if (best != null && bestDistance < 1) onStationTap(best);
+    _pointIds.clear();
+    for (final cluster in widget.clusters) {
+      final id = cluster.primary.uuid;
+      _pointIds.add(id);
+      _controller.addPoint(
+        globe.Point(
+          id: id,
+          coordinates: GlobeCoordinates(
+            cluster.center.latitude,
+            cluster.center.longitude,
+          ),
+          style: globe.PointStyle(
+            color: AppColors.accent,
+            size: cluster.isSingle
+                ? 4
+                : (4 + math.log(cluster.count + 1) * 1.6).clamp(4, 13),
+          ),
+          onTap: () => widget.onTapCluster(cluster),
+        ),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return MapLibreMap(
-      options: const MapOptions(
-        initStyle: _style,
-        initCenter: Geographic(lon: 0, lat: 20),
-        initZoom: 2.5,
-        initPitch: 45,
-        maxPitch: 65,
-        maxZoom: 18,
+    return ColoredBox(
+      color: AppColors.ink,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final radius =
+              math.min(constraints.maxWidth, constraints.maxHeight) * 0.42;
+          return FlutterEarthGlobe(controller: _controller, radius: radius);
+        },
       ),
-      layers: [
-        CircleLayer(
-          points: [
-            for (final station in _geoStations)
-              Feature<Point>(
-                id: station.uuid,
-                geometry: Point(
-                  Geographic(
-                    lon: station.geo!.longitude,
-                    lat: station.geo!.latitude,
-                  ),
-                ),
-              ),
-          ],
-          radius: 5,
-          color: AppColors.accent,
-          strokeWidth: 1,
-          strokeColor: AppColors.ink,
-        ),
-      ],
-      onEvent: (event) {
-        if (event is MapEventClick) {
-          _handleClick(event.point.lon, event.point.lat);
-        }
-      },
     );
   }
 }
