@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:radioflow/l10n/app_localizations.dart';
 
 import '../../features/connectivity/offline_banner.dart';
 import '../../features/player/bloc/player_bloc.dart';
@@ -17,8 +18,15 @@ class HomeShell extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocListener<PlayerBloc, PlayerState>(
       listenWhen: (a, b) =>
-          b.station != null && a.station?.uuid != b.station?.uuid,
+          (b.station != null && a.station?.uuid != b.station?.uuid) ||
+          (a.status != b.status && b.status == PlaybackStatus.error),
       listener: (context, state) {
+        if (state.status == PlaybackStatus.error) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(AppLocalizations.of(context).stationUnavailable)),
+          );
+          return;
+        }
         final station = state.station;
         if (station != null) context.read<RecentsCubit>().push(station);
       },
