@@ -5,6 +5,8 @@ import 'package:radioflow/l10n/app_localizations.dart';
 
 import '../../../favorites/bloc/favorites_cubit.dart';
 import '../../../player/bloc/player_bloc.dart';
+import '../../../player/presentation/pages/equalizer_page.dart';
+import '../../../player/presentation/pages/sleep_timer_page.dart';
 import '../../../recents/recents_cubit.dart';
 import '../../bloc/settings_cubit.dart';
 
@@ -38,6 +40,15 @@ class SettingsPage extends StatelessWidget {
                   value: state.highQuality,
                   onChanged: (v) =>
                       context.read<SettingsCubit>().setHighQuality(value: v),
+                ),
+              ),
+              _SettingsRow(
+                label: l10n.equalizer,
+                description: l10n.equalizerTagline,
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => const EqualizerPage(),
+                  ),
                 ),
               ),
               const _SleepTimerRow(),
@@ -183,40 +194,11 @@ class _SleepTimerRow extends StatelessWidget {
         return _SettingsRow(
           label: l10n.sleepTimer,
           trailingText: value,
-          onTap: () => _showPicker(context),
+          onTap: () => Navigator.of(context).push(
+            MaterialPageRoute<void>(builder: (_) => const SleepTimerPage()),
+          ),
         );
       },
-    );
-  }
-
-  void _showPicker(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    final bloc = context.read<PlayerBloc>();
-    showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: AppColors.surface,
-      builder: (_) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              title: Text(l10n.sleepOff),
-              onTap: () {
-                bloc.add(const SleepTimerSet(null));
-                Navigator.of(context).pop();
-              },
-            ),
-            for (final minutes in const [15, 30, 60])
-              ListTile(
-                title: Text(l10n.sleepMinutes(minutes)),
-                onTap: () {
-                  bloc.add(SleepTimerSet(minutes));
-                  Navigator.of(context).pop();
-                },
-              ),
-          ],
-        ),
-      ),
     );
   }
 }

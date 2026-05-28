@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math' as math;
 
 import 'package:domain/domain.dart';
 import 'package:flutter/widgets.dart';
@@ -9,11 +10,15 @@ class Map3dView extends StatefulWidget {
     super.key,
     required this.stations,
     required this.onPlay,
+    required this.onCenterStation,
+    this.locked = false,
     this.focus,
   });
 
   final List<Station> stations;
   final void Function(Station station) onPlay;
+  final void Function(Station? station) onCenterStation;
+  final bool locked;
   final Station? focus;
 
   @override
@@ -27,6 +32,7 @@ class _Map3dViewState extends State<Map3dView> {
 
   MapboxMap? _map;
   bool _sourceReady = false;
+  bool _armed = false;
   double _zoom = 1.5;
   final Map<String, Station> _byUuid = {};
 
@@ -39,9 +45,44 @@ class _Map3dViewState extends State<Map3dView> {
     ),
     onMapCreated: _onMapCreated,
     onCameraChangeListener: (data) => _zoom = data.cameraState.zoom,
+    onMapIdleListener: (_) => _maybeTune(),
+    // ignore: deprecated_member_use
+    onScrollListener: (_) => _armed = true,
     // ignore: deprecated_member_use
     onTapListener: _onTap,
   );
+
+  Future<void> _maybeTune() async {
+    final map = _map;
+    if (!_armed || widget.locked || map == null) return;
+    final CameraState cam;
+    try {
+      cam = await map.getCameraState();
+    } on Object {
+      return;
+    }
+    final center = cam.center.coordinates;
+    final lng = center.lng.toDouble();
+    final lat = center.lat.toDouble();
+    final cosLat = math.cos(lat * math.pi / 180);
+    final threshold = 22 / math.pow(2, cam.zoom);
+    Station? nearest;
+    double best = double.infinity;
+    for (final station in widget.stations) {
+      final geo = station.geo;
+      if (geo == null) continue;
+      final dLat = geo.latitude - lat;
+      final dLng = (geo.longitude - lng) * cosLat;
+      final dist = dLat * dLat + dLng * dLng;
+      if (dist < best) {
+        best = dist;
+        nearest = station;
+      }
+    }
+    widget.onCenterStation(
+      nearest != null && best <= threshold * threshold ? nearest : null,
+    );
+  }
 
   @override
   void didUpdateWidget(Map3dView oldWidget) {
@@ -224,6 +265,7 @@ class _Map3dViewState extends State<Map3dView> {
   }
 
   void _flyTo(double lon, double lat, double zoom) {
+    _armed = false;
     _map?.flyTo(
       CameraOptions(
         center: Point(coordinates: Position(lon, lat)),

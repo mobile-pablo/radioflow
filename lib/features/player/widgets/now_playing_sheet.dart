@@ -8,6 +8,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../shared/widgets/station_artwork.dart';
 import '../../favorites/widgets/favorite_button.dart';
 import '../bloc/player_bloc.dart';
+import '../presentation/pages/sleep_timer_page.dart';
 import 'play_pause_button.dart';
 
 class NowPlayingSheet extends StatelessWidget {
@@ -250,37 +251,8 @@ class _SleepRow extends StatelessWidget {
       icon: Icons.bedtime_outlined,
       label: l10n.sleepTimer,
       value: value,
-      onTap: () => _showPicker(context),
-    );
-  }
-
-  void _showPicker(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    final bloc = context.read<PlayerBloc>();
-    showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: AppColors.surface,
-      builder: (_) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              title: Text(l10n.sleepOff),
-              onTap: () {
-                bloc.add(const SleepTimerSet(null));
-                Navigator.of(context).pop();
-              },
-            ),
-            for (final option in const [15, 30, 60])
-              ListTile(
-                title: Text(l10n.sleepMinutes(option)),
-                onTap: () {
-                  bloc.add(SleepTimerSet(option));
-                  Navigator.of(context).pop();
-                },
-              ),
-          ],
-        ),
+      onTap: () => Navigator.of(context).push(
+        MaterialPageRoute<void>(builder: (_) => const SleepTimerPage()),
       ),
     );
   }

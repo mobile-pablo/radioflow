@@ -3,9 +3,14 @@ import 'package:just_audio/just_audio.dart';
 import 'package:just_audio_background/just_audio_background.dart';
 
 class AudioController {
-  AudioController() : _player = AudioPlayer();
+  AudioController();
 
-  final AudioPlayer _player;
+  final AndroidEqualizer _equalizer = AndroidEqualizer();
+  late final AudioPlayer _player = AudioPlayer(
+    audioPipeline: AudioPipeline(androidAudioEffects: [_equalizer]),
+  );
+
+  AndroidEqualizer get equalizer => _equalizer;
 
   Stream<PlayerState> get playerStateStream => _player.playerStateStream;
 

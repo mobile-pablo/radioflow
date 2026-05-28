@@ -14,9 +14,9 @@ import '../../../player/bloc/player_bloc.dart';
 import '../../bloc/map_cubit.dart';
 import '../../bloc/station_cluster.dart';
 import '../widgets/cluster_sheet.dart';
+import '../../../../shared/widgets/share_sheet.dart';
 import '../widgets/filter_sheet.dart';
 import '../widgets/map3d_view.dart';
-import '../widgets/share_sheet.dart';
 import '../widgets/station_search_delegate.dart';
 
 class DiscoverPage extends StatelessWidget {
@@ -47,16 +47,18 @@ class _DiscoverViewState extends State<_DiscoverView>
     vsync: this,
     duration: const Duration(milliseconds: 900),
   );
-  bool _showGlobe = false;
-  bool _locked = false;
+  bool _showGlobe = true;
   Station? _focusStation;
   Timer? _tuneDebounce;
-  Station? _tuned;
+  final ValueNotifier<bool> _locked = ValueNotifier(false);
+  final ValueNotifier<Station?> _tuned = ValueNotifier(null);
 
   @override
   void dispose() {
     _tuneDebounce?.cancel();
     _flyController.dispose();
+    _locked.dispose();
+    _tuned.dispose();
     super.dispose();
   }
 
@@ -88,7 +90,7 @@ class _DiscoverViewState extends State<_DiscoverView>
   }
 
   void _scheduleAutoTune(LatLng center, double zoom) {
-    if (_locked) return;
+    if (_locked.value) return;
     _tuneDebounce?.cancel();
     _tuneDebounce = Timer(
       const Duration(milliseconds: 550),
@@ -99,6 +101,17 @@ class _DiscoverViewState extends State<_DiscoverView>
   void _openShare() {
     final station = context.read<PlayerBloc>().state.station;
     ShareSheet.show(context, station);
+  }
+
+  void _onCenterStation(Station? station) {
+    if (_locked.value) return;
+    if (station == null) {
+      _tuned.value = null;
+      return;
+    }
+    _tuned.value = station;
+    final playing = context.read<PlayerBloc>().state.station;
+    if (playing?.uuid != station.uuid) _play(station);
   }
 
   void _autoTune(LatLng center, double zoom) {
@@ -119,15 +132,9 @@ class _DiscoverViewState extends State<_DiscoverView>
         nearest = station;
       }
     }
-    if (nearest == null || best > threshold * threshold) {
-      if (_tuned != null) setState(() => _tuned = null);
-      return;
-    }
-    if (_tuned?.uuid != nearest.uuid) setState(() => _tuned = nearest);
-    final playing = context.read<PlayerBloc>().state.station;
-    if (playing?.uuid != nearest.uuid) {
-      context.read<PlayerBloc>().add(PlayStationRequested(nearest));
-    }
+    _onCenterStation(
+      nearest != null && best <= threshold * threshold ? nearest : null,
+    );
   }
 
   Future<void> _openSearch() async {
@@ -143,6 +150,9 @@ class _DiscoverViewState extends State<_DiscoverView>
   }
 
   void _flyTo(LatLng destination, {double destinationZoom = 6}) {
+    if (!destination.latitude.isFinite || !destination.longitude.isFinite) {
+      return;
+    }
     final camera = _mapController.camera;
     final startCenter = camera.center;
     final startZoom = camera.zoom;
@@ -152,13 +162,15 @@ class _DiscoverViewState extends State<_DiscoverView>
     );
     void tick() {
       final t = curve.value;
-      _mapController.move(
-        LatLng(
+      final lat =
           startCenter.latitude +
-              (destination.latitude - startCenter.latitude) * t,
+          (destination.latitude - startCenter.latitude) * t;
+      final lng =
           startCenter.longitude +
-              (destination.longitude - startCenter.longitude) * t,
-        ),
+          (destination.longitude - startCenter.longitude) * t;
+      if (!lat.isFinite || !lng.isFinite) return;
+      _mapController.move(
+        LatLng(lat.clamp(-85.0, 85.0), lng),
         startZoom + (destinationZoom - startZoom) * t,
       );
     }
@@ -177,20 +189,37 @@ class _DiscoverViewState extends State<_DiscoverView>
           children: [
             Positioned.fill(
               child: _showGlobe
-                  ? Map3dView(
-                      stations: state.stations,
-                      onPlay: _play,
-                      focus: _focusStation,
+                  ? ValueListenableBuilder<bool>(
+                      valueListenable: _locked,
+                      builder: (context, locked, _) => Map3dView(
+                        stations: state.stations,
+                        onPlay: _play,
+                        onCenterStation: _onCenterStation,
+                        locked: locked,
+                        focus: _focusStation,
+                      ),
                     )
                   : _buildMap(context, state),
             ),
-            if (!_showGlobe && state.status == MapStatus.ready) ...[
-              _Crosshair(tuned: _tuned, locked: _locked),
-              _RightActions(
-                locked: _locked,
-                onShare: _openShare,
-                onLock: () => setState(() => _locked = !_locked),
+            if (state.status == MapStatus.ready) ...[
+              ValueListenableBuilder<bool>(
+                valueListenable: _locked,
+                builder: (context, locked, _) =>
+                    ValueListenableBuilder<Station?>(
+                      valueListenable: _tuned,
+                      builder: (context, tuned, _) =>
+                          _Crosshair(tuned: tuned, locked: locked),
+                    ),
               ),
+              ValueListenableBuilder<bool>(
+                valueListenable: _locked,
+                builder: (context, locked, _) => _RightActions(
+                  locked: locked,
+                  onShare: _openShare,
+                  onLock: () => _locked.value = !locked,
+                ),
+              ),
+              const _CityBanner(),
             ],
             if (state.status == MapStatus.loading)
               const ColoredBox(
@@ -486,6 +515,98 @@ class _MapError extends StatelessWidget {
             const SizedBox(height: AppSpacing.md),
             FilledButton(onPressed: onRetry, child: const Text('Retry')),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CityBanner extends StatelessWidget {
+  const _CityBanner();
+
+  String _localTime(Station station) {
+    final lon = station.geo?.longitude;
+    if (lon == null) return '';
+    final offset = (lon / 15).round();
+    final local = DateTime.now().toUtc().add(Duration(hours: offset));
+    final hh = local.hour.toString().padLeft(2, '0');
+    final mm = local.minute.toString().padLeft(2, '0');
+    return '$hh:$mm';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    return Positioned(
+      left: 0,
+      right: 0,
+      bottom: 0,
+      child: IgnorePointer(
+        child: BlocBuilder<PlayerBloc, PlayerState>(
+          buildWhen: (a, b) => a.station != b.station,
+          builder: (context, player) {
+            final station = player.station;
+            if (station == null) return const SizedBox.shrink();
+            final place = (station.stateRegion?.isNotEmpty ?? false)
+                ? station.stateRegion!
+                : station.name;
+            final flag = station.countryCode.isEmpty
+                ? null
+                : Country.flagEmoji(station.countryCode);
+            return Container(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.xl,
+                AppSpacing.xxl,
+                AppSpacing.xl,
+                AppSpacing.lg,
+              ),
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [Colors.transparent, Color(0x8C000000)],
+                ),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 44,
+                    height: 44,
+                    alignment: Alignment.center,
+                    decoration: const BoxDecoration(
+                      color: AppColors.cream,
+                      shape: BoxShape.circle,
+                    ),
+                    child: flag != null
+                        ? Text(flag, style: const TextStyle(fontSize: 20))
+                        : Text(
+                            station.initials,
+                            style: textTheme.titleMedium?.copyWith(
+                              color: AppColors.ink,
+                            ),
+                          ),
+                  ),
+                  const SizedBox(width: AppSpacing.md),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          place,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: textTheme.headlineSmall,
+                        ),
+                        if (station.country.isNotEmpty)
+                          Text(station.country, style: textTheme.bodySmall),
+                      ],
+                    ),
+                  ),
+                  Text(_localTime(station), style: textTheme.bodyMedium),
+                ],
+              ),
+            );
+          },
         ),
       ),
     );
