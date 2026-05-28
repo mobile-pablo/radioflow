@@ -111,7 +111,7 @@ class _Map3dViewState extends State<Map3dView> {
     await map.compass.updateSettings(
       CompassSettings(
         position: OrnamentPosition.TOP_LEFT,
-        marginTop: 130,
+        marginTop: MediaQuery.of(context).padding.top,
         marginLeft: 16,
       ),
     );
