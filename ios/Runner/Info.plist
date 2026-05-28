@@ -49,6 +49,8 @@
 	<array>
 		<string>audio</string>
 	</array>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>RadioFlow uses your location to find radio stations near you.</string>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSAllowsArbitraryLoads</key>
