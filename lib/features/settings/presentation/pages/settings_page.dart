@@ -290,28 +290,21 @@ class _SettingsGroup extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(4, 0, 4, AppSpacing.sm),
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.lg,
+              0,
+              AppSpacing.lg,
+              AppSpacing.xs,
+            ),
             child: Text(
-              title.toUpperCase(),
-              style: Theme.of(context).textTheme.labelSmall,
+              title,
+              style: Theme.of(context).textTheme.headlineSmall,
             ),
           ),
-          Container(
-            decoration: BoxDecoration(
-              color: AppColors.surface,
-              borderRadius: BorderRadius.circular(AppSpacing.radiusCard),
-              border: Border.all(color: AppColors.line),
-            ),
-            clipBehavior: Clip.antiAlias,
-            child: Column(
-              children: [
-                for (var i = 0; i < children.length; i++) ...[
-                  if (i > 0) const Divider(height: 1),
-                  children[i],
-                ],
-              ],
-            ),
-          ),
+          for (var i = 0; i < children.length; i++) ...[
+            if (i > 0) const Divider(height: 1),
+            children[i],
+          ],
         ],
       ),
     );
