@@ -40,20 +40,15 @@ class _DiscoverViewState extends State<_DiscoverView> {
   Station? _focusStation;
   String? _selfUuid;
   final ValueNotifier<bool> _locked = ValueNotifier(false);
-  final ValueNotifier<bool> _searching = ValueNotifier(false);
-  final ValueNotifier<Station?> _tuned = ValueNotifier(null);
 
   @override
   void dispose() {
     _locked.dispose();
-    _searching.dispose();
-    _tuned.dispose();
     super.dispose();
   }
 
   void _play(Station station) {
     _selfUuid = station.uuid;
-    _tuned.value = station;
     context.read<PlayerBloc>().add(
       PlayStationRequested(
         station,
@@ -78,12 +73,7 @@ class _DiscoverViewState extends State<_DiscoverView> {
   }
 
   void _onCenterStation(Station? station) {
-    if (_locked.value) return;
-    if (station == null) {
-      _tuned.value = null;
-      return;
-    }
-    _tuned.value = station;
+    if (_locked.value || station == null) return;
     final playing = context.read<PlayerBloc>().state.station;
     if (playing?.uuid != station.uuid) _play(station);
   }
@@ -154,21 +144,16 @@ class _DiscoverViewState extends State<_DiscoverView> {
                     stations: state.stations,
                     onPlay: _play,
                     onCenterStation: _onCenterStation,
-                    onSearching: (v) => _searching.value = v,
                     locked: locked,
                     focus: _focusStation,
                   ),
                 ),
               ),
               if (state.status == MapStatus.ready) ...[
-                ValueListenableBuilder<bool>(
-                  valueListenable: _searching,
-                  builder: (context, searching, _) =>
-                      ValueListenableBuilder<Station?>(
-                        valueListenable: _tuned,
-                        builder: (context, tuned, _) =>
-                            _Crosshair(tuned: tuned, searching: searching),
-                      ),
+                BlocBuilder<PlayerBloc, PlayerState>(
+                  buildWhen: (a, b) => a.isBuffering != b.isBuffering,
+                  builder: (context, player) =>
+                      _Crosshair(loading: player.isBuffering),
                 ),
               ValueListenableBuilder<bool>(
                 valueListenable: _locked,
@@ -264,52 +249,72 @@ class _GlassButton extends StatelessWidget {
   }
 }
 
-class _Crosshair extends StatelessWidget {
-  const _Crosshair({required this.tuned, required this.searching});
+class _Crosshair extends StatefulWidget {
+  const _Crosshair({required this.loading});
 
-  final Station? tuned;
-  final bool searching;
+  final bool loading;
+
+  @override
+  State<_Crosshair> createState() => _CrosshairState();
+}
+
+class _CrosshairState extends State<_Crosshair>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _spin = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 650),
+  );
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.loading) _spin.repeat();
+  }
+
+  @override
+  void didUpdateWidget(_Crosshair oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.loading && !_spin.isAnimating) {
+      _spin.repeat();
+    } else if (!widget.loading && _spin.isAnimating) {
+      _spin
+        ..stop()
+        ..value = 0;
+    }
+  }
+
+  @override
+  void dispose() {
+    _spin.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    final showName = tuned != null && !searching;
+    final ring = CustomPaint(
+      size: const Size(74, 74),
+      painter: _RingPainter(dashed: widget.loading),
+      child: const Center(
+        child: SizedBox(
+          width: 6,
+          height: 6,
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: AppColors.cream,
+            ),
+          ),
+        ),
+      ),
+    );
     return IgnorePointer(
       child: Center(
         child: SizedBox(
           width: 74,
           height: 74,
-          child: CustomPaint(
-            painter: _RingPainter(dashed: searching),
-            child: Center(
-              child: showName
-                  ? Padding(
-                      padding: const EdgeInsets.all(10),
-                      child: Text(
-                        tuned!.name,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          color: AppColors.cream,
-                          fontSize: 10,
-                          height: 1.05,
-                          fontWeight: FontWeight.w600,
-                          shadows: [
-                            Shadow(color: Colors.black, blurRadius: 4),
-                          ],
-                        ),
-                      ),
-                    )
-                  : Container(
-                      width: 6,
-                      height: 6,
-                      decoration: const BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: AppColors.cream,
-                      ),
-                    ),
-            ),
-          ),
+          child: widget.loading
+              ? RotationTransition(turns: _spin, child: ring)
+              : ring,
         ),
       ),
     );

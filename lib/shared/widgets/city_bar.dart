@@ -8,6 +8,22 @@ import '../../features/discover/presentation/widgets/station_list_sheet.dart';
 import '../../features/player/bloc/player_bloc.dart';
 import '../stations_holder.dart';
 
+class DragHandle extends StatelessWidget {
+  const DragHandle({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 36,
+      height: 4,
+      decoration: BoxDecoration(
+        color: AppColors.lineStrong,
+        borderRadius: BorderRadius.circular(2),
+      ),
+    );
+  }
+}
+
 class CityBar extends StatelessWidget {
   const CityBar({super.key});
 
@@ -30,23 +46,26 @@ class CityBar extends StatelessWidget {
         final station = player.station;
         if (station == null) return const SizedBox.shrink();
         final all = getIt<StationsHolder>().stations;
-        final place = (station.stateRegion?.isNotEmpty ?? false)
-            ? station.stateRegion!
-            : station.country;
+        final hasRegion = station.stateRegion?.isNotEmpty ?? false;
+        final place = hasRegion ? station.stateRegion! : station.name;
         final flag = station.countryCode.isEmpty
             ? ''
             : '${Country.flagEmoji(station.countryCode)} ';
-        final count = (station.stateRegion?.isNotEmpty ?? false)
+        final count = hasRegion
             ? all.where((s) => s.stateRegion == station.stateRegion).length
             : all.where((s) => s.country == station.country).length;
+        void open() =>
+            StationListSheet.show(context, station: station, stations: all);
         return GestureDetector(
           behavior: HitTestBehavior.opaque,
-          onTap: () =>
-              StationListSheet.show(context, station: station, stations: all),
+          onTap: open,
+          onVerticalDragEnd: (details) {
+            if ((details.primaryVelocity ?? 0) < 0) open();
+          },
           child: Container(
             padding: const EdgeInsets.fromLTRB(
               AppSpacing.xl,
-              AppSpacing.lg,
+              AppSpacing.sm,
               AppSpacing.xl,
               AppSpacing.md,
             ),
@@ -57,44 +76,51 @@ class CityBar extends StatelessWidget {
                 colors: [Colors.transparent, Color(0xCC000000)],
               ),
             ),
-            child: Row(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Container(
-                  width: 44,
-                  height: 44,
-                  alignment: Alignment.center,
-                  decoration: const BoxDecoration(
-                    color: AppColors.cream,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Text(
-                    count > 0 ? '$count' : station.initials,
-                    style: textTheme.titleMedium?.copyWith(
-                      color: AppColors.ink,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: AppSpacing.md),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        place,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: textTheme.titleLarge,
+                const DragHandle(),
+                const SizedBox(height: AppSpacing.sm),
+                Row(
+                  children: [
+                    Container(
+                      width: 44,
+                      height: 44,
+                      alignment: Alignment.center,
+                      decoration: const BoxDecoration(
+                        color: AppColors.cream,
+                        shape: BoxShape.circle,
                       ),
-                      if (station.country.isNotEmpty)
-                        Text(
-                          '$flag${station.country}',
-                          style: textTheme.bodySmall,
+                      child: Text(
+                        count > 0 ? '$count' : station.initials,
+                        style: textTheme.titleMedium?.copyWith(
+                          color: AppColors.ink,
+                          fontWeight: FontWeight.w700,
                         ),
-                    ],
-                  ),
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.md),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            place,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: textTheme.titleLarge,
+                          ),
+                          if (station.country.isNotEmpty)
+                            Text(
+                              '$flag${station.country}',
+                              style: textTheme.bodySmall,
+                            ),
+                        ],
+                      ),
+                    ),
+                    Text(_localTime(station), style: textTheme.bodyMedium),
+                  ],
                 ),
-                Text(_localTime(station), style: textTheme.bodyMedium),
               ],
             ),
           ),

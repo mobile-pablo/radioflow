@@ -11,7 +11,6 @@ class Map3dView extends StatefulWidget {
     required this.stations,
     required this.onPlay,
     required this.onCenterStation,
-    required this.onSearching,
     this.locked = false,
     this.focus,
   });
@@ -19,7 +18,6 @@ class Map3dView extends StatefulWidget {
   final List<Station> stations;
   final void Function(Station station) onPlay;
   final void Function(Station? station) onCenterStation;
-  final void Function(bool searching) onSearching;
   final bool locked;
   final Station? focus;
 
@@ -46,24 +44,13 @@ class _Map3dViewState extends State<Map3dView> {
       zoom: 1.5,
     ),
     onMapCreated: _onMapCreated,
-    onCameraChangeListener: (data) {
-      _zoom = data.cameraState.zoom;
-      if (_armed) widget.onSearching(true);
-    },
-    onMapIdleListener: (_) => _settle(),
+    onCameraChangeListener: (data) => _zoom = data.cameraState.zoom,
+    onMapIdleListener: (_) => _maybeTune(),
     // ignore: deprecated_member_use
-    onScrollListener: (_) {
-      _armed = true;
-      widget.onSearching(true);
-    },
+    onScrollListener: (_) => _armed = true,
     // ignore: deprecated_member_use
     onTapListener: _onTap,
   );
-
-  Future<void> _settle() async {
-    await _maybeTune();
-    if (mounted) widget.onSearching(false);
-  }
 
   Future<void> _maybeTune() async {
     final map = _map;
@@ -118,6 +105,11 @@ class _Map3dViewState extends State<Map3dView> {
   Future<void> _onMapCreated(MapboxMap map) async {
     _map = map;
     await map.scaleBar.updateSettings(ScaleBarSettings(enabled: false));
+    await map.logo.updateSettings(LogoSettings(enabled: false));
+    await map.attribution.updateSettings(AttributionSettings(enabled: false));
+    await map.compass.updateSettings(
+      CompassSettings(position: OrnamentPosition.TOP_LEFT),
+    );
     await map.style.setProjection(
       StyleProjection(name: StyleProjectionName.globe),
     );

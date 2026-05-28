@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:radioflow/l10n/app_localizations.dart';
 
+import '../../../shared/widgets/city_bar.dart';
 import '../bloc/player_bloc.dart';
 import '../presentation/pages/equalizer_page.dart';
 import '../presentation/pages/sleep_timer_page.dart';
@@ -31,16 +32,27 @@ class MiniPlayer extends StatelessWidget {
           if (station.country.isNotEmpty) station.country,
         ].join(' · ');
         final textTheme = Theme.of(context).textTheme;
-        return Container(
-          decoration: const BoxDecoration(
-            color: Color(0xEB000000),
-            border: Border(top: BorderSide(color: AppColors.line)),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 10, 8, 10),
-            child: Row(
-              children: [
-                Expanded(
+        return GestureDetector(
+          onVerticalDragEnd: (details) {
+            if ((details.primaryVelocity ?? 0) < 0) {
+              NowPlayingSheet.show(context);
+            }
+          },
+          child: Container(
+            decoration: const BoxDecoration(
+              color: Color(0xEB000000),
+              border: Border(top: BorderSide(color: AppColors.line)),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 6, 8, 10),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const DragHandle(),
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      Expanded(
                   child: GestureDetector(
                     behavior: HitTestBehavior.opaque,
                     onTap: () => NowPlayingSheet.show(context),
@@ -85,12 +97,15 @@ class MiniPlayer extends StatelessWidget {
                   ),
                 ),
                 const _StopPlayButton(),
-                _IconBtn(
-                  icon: Icons.skip_next_rounded,
-                  onTap: () =>
-                      context.read<PlayerBloc>().add(const PlayNext()),
-                ),
-              ],
+                      _IconBtn(
+                        icon: Icons.skip_next_rounded,
+                        onTap: () =>
+                            context.read<PlayerBloc>().add(const PlayNext()),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
         );
