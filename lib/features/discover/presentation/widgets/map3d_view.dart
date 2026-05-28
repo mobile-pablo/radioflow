@@ -65,9 +65,9 @@ class _Map3dViewState extends State<Map3dView> {
   String _featureCollection() {
     _byUuid.clear();
     final features = <Map<String, Object?>>[];
-    for (final station in widget.stations) {
-      final geo = station.geo;
-      if (geo == null) continue;
+    final geoStations = widget.stations.where((s) => s.geo != null).take(2000);
+    for (final station in geoStations) {
+      final geo = station.geo!;
       _byUuid[station.uuid] = station;
       features.add({
         'type': 'Feature',

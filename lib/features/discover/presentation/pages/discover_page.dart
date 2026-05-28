@@ -3,13 +3,11 @@ import 'package:domain/domain.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_map/flutter_map.dart';
-import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:radioflow/l10n/app_localizations.dart';
 
 import '../../../../app/di.dart';
 import '../../../player/bloc/player_bloc.dart';
-import '../../../settings/presentation/pages/settings_page.dart';
 import '../../bloc/map_cubit.dart';
 import '../../bloc/station_cluster.dart';
 import '../widgets/cluster_sheet.dart';
@@ -146,7 +144,6 @@ class _DiscoverViewState extends State<_DiscoverView>
               showGlobe: _showGlobe,
               hasFilters: state.hasFilters,
               onToggleGlobe: () => setState(() => _showGlobe = !_showGlobe),
-              onSettings: () => context.push(SettingsPage.path),
               onFilters: () => FilterSheet.show(context),
               onSearch: _openSearch,
               onRandom: _onRandom,
@@ -208,7 +205,6 @@ class _TopOverlay extends StatelessWidget {
     required this.showGlobe,
     required this.hasFilters,
     required this.onToggleGlobe,
-    required this.onSettings,
     required this.onFilters,
     required this.onSearch,
     required this.onRandom,
@@ -217,7 +213,6 @@ class _TopOverlay extends StatelessWidget {
   final bool showGlobe;
   final bool hasFilters;
   final VoidCallback onToggleGlobe;
-  final VoidCallback onSettings;
   final VoidCallback onFilters;
   final VoidCallback onSearch;
   final VoidCallback onRandom;
@@ -275,8 +270,6 @@ class _TopOverlay extends StatelessWidget {
                   icon: showGlobe ? Icons.map_rounded : Icons.public_rounded,
                   onTap: onToggleGlobe,
                 ),
-                const SizedBox(width: AppSpacing.sm),
-                _GlassButton(icon: Icons.settings_outlined, onTap: onSettings),
               ],
             ),
             const SizedBox(height: AppSpacing.md),

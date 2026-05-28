@@ -36,19 +36,15 @@ class HomeShell extends StatelessWidget {
               left: 0,
               right: 0,
               bottom: 0,
-              child: SafeArea(
-                top: false,
-                child: Padding(
-                  padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const MiniPlayer(),
-                      const SizedBox(height: AppSpacing.sm),
-                      FloatingNavBar(navigationShell: navigationShell),
-                    ],
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Padding(
+                    padding: EdgeInsets.only(bottom: AppSpacing.sm),
+                    child: MiniPlayer(),
                   ),
-                ),
+                  FloatingNavBar(navigationShell: navigationShell),
+                ],
               ),
             ),
           ],

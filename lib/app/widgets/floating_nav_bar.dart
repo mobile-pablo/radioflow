@@ -12,40 +12,38 @@ class FloatingNavBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final items = <({IconData icon, String label})>[
-      (icon: Icons.map_outlined, label: l10n.navDiscover),
-      (icon: Icons.format_list_bulleted_rounded, label: l10n.navStations),
+      (icon: Icons.explore_outlined, label: l10n.navExplore),
       (icon: Icons.favorite_rounded, label: l10n.navFavorites),
+      (icon: Icons.map_outlined, label: l10n.navBrowse),
+      (icon: Icons.search_rounded, label: l10n.navSearch),
+      (icon: Icons.settings_outlined, label: l10n.settings),
     ];
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-      padding: const EdgeInsets.all(6),
-      decoration: BoxDecoration(
-        color: AppColors.surface.withValues(alpha: 0.92),
-        borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: AppColors.line),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.5),
-            blurRadius: 32,
-            offset: const Offset(0, 12),
-          ),
-        ],
+    return DecoratedBox(
+      decoration: const BoxDecoration(
+        color: Colors.black,
+        border: Border(top: BorderSide(color: AppColors.line)),
       ),
-      child: Row(
-        children: [
-          for (var i = 0; i < items.length; i++)
-            Expanded(
-              child: _NavButton(
-                icon: items[i].icon,
-                label: items[i].label,
-                active: navigationShell.currentIndex == i,
-                onTap: () => navigationShell.goBranch(
-                  i,
-                  initialLocation: i == navigationShell.currentIndex,
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+          child: Row(
+            children: [
+              for (var i = 0; i < items.length; i++)
+                Expanded(
+                  child: _NavButton(
+                    icon: items[i].icon,
+                    label: items[i].label,
+                    active: navigationShell.currentIndex == i,
+                    onTap: () => navigationShell.goBranch(
+                      i,
+                      initialLocation: i == navigationShell.currentIndex,
+                    ),
+                  ),
                 ),
-              ),
-            ),
-        ],
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -70,31 +68,20 @@ class _NavButton extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(vertical: 10),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(22),
-          color: active
-              ? AppColors.accent.withValues(alpha: 0.10)
-              : Colors.transparent,
-          border: Border.all(
-            color: active
-                ? AppColors.accent.withValues(alpha: 0.30)
-                : Colors.transparent,
-          ),
-        ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 20, color: color),
-            const SizedBox(height: 3),
+            Icon(icon, size: 22, color: color),
+            const SizedBox(height: 4),
             Text(
               label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.w600,
-                letterSpacing: 0.2,
+                fontSize: 11,
+                fontWeight: FontWeight.w500,
                 color: color,
               ),
             ),

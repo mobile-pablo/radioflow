@@ -70,7 +70,7 @@ class _StationsViewState extends State<_StationsView> {
     final l10n = AppLocalizations.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: Text(l10n.navStations),
+        title: Text(l10n.navBrowse),
         actions: [
           BlocBuilder<StationsBloc, StationsState>(
             buildWhen: (a, b) => a.sort != b.sort,
