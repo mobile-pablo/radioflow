@@ -3,6 +3,7 @@ import 'package:domain/domain.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:radioflow/l10n/app_localizations.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../shared/widgets/station_artwork.dart';
 import '../../favorites/widgets/favorite_button.dart';
@@ -74,7 +75,7 @@ class NowPlayingSheet extends StatelessWidget {
                     const SizedBox(width: AppSpacing.xl),
                     const PlayPauseButton(size: 76, filled: true),
                     const SizedBox(width: AppSpacing.xl),
-                    const SizedBox(width: 48),
+                    _SleepButton(minutes: state.sleepMinutes),
                   ],
                 ),
                 if (state.status == PlaybackStatus.error) ...[
@@ -86,6 +87,11 @@ class NowPlayingSheet extends StatelessWidget {
                     ),
                   ),
                 ],
+                if (station.homepage != null && station.homepage!.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: AppSpacing.lg),
+                    child: _HomepageLink(url: station.homepage!),
+                  ),
               ],
             ),
           ),
@@ -180,6 +186,58 @@ class _Pill extends StatelessWidget {
         border: Border.all(color: AppColors.line),
       ),
       child: Text(label, style: Theme.of(context).textTheme.bodySmall),
+    );
+  }
+}
+
+class _SleepButton extends StatelessWidget {
+  const _SleepButton({required this.minutes});
+
+  final int? minutes;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final active = minutes != null;
+    return PopupMenuButton<int?>(
+      tooltip: l10n.sleepTimer,
+      icon: Icon(
+        Icons.bedtime_outlined,
+        color: active ? AppColors.accent : AppColors.textMuted,
+      ),
+      onSelected: (value) =>
+          context.read<PlayerBloc>().add(SleepTimerSet(value)),
+      itemBuilder: (context) => [
+        PopupMenuItem<int?>(value: null, child: Text(l10n.sleepOff)),
+        for (final option in const [15, 30, 60])
+          PopupMenuItem<int?>(
+            value: option,
+            child: Text(l10n.sleepMinutes(option)),
+          ),
+      ],
+    );
+  }
+}
+
+class _HomepageLink extends StatelessWidget {
+  const _HomepageLink({required this.url});
+
+  final String url;
+
+  Future<void> _open() async {
+    final uri = Uri.tryParse(url);
+    if (uri == null) return;
+    await launchUrl(uri, mode: LaunchMode.externalApplication);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return TextButton.icon(
+      onPressed: _open,
+      icon: const Icon(Icons.open_in_new_rounded, size: 18),
+      label: Text(l10n.openHomepage),
+      style: TextButton.styleFrom(foregroundColor: AppColors.textSecondary),
     );
   }
 }

@@ -17,6 +17,7 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
     on<StopRequested>(_onStop);
     on<VolumeChanged>(_onVolumeChanged);
     on<VolumeNudged>(_onVolumeNudged);
+    on<SleepTimerSet>(_onSleepTimerSet);
     on<_PlaybackStatusUpdated>(_onStatusUpdated);
 
     _subscription = _audio.playerStateStream.listen(
@@ -26,6 +27,7 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
 
   final AudioController _audio;
   late final StreamSubscription<ja.PlayerState> _subscription;
+  Timer? _sleepTimer;
 
   Future<void> _onPlayStation(
     PlayStationRequested event,
@@ -63,8 +65,25 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
   }
 
   Future<void> _onStop(StopRequested event, Emitter<PlayerState> emit) async {
+    _sleepTimer?.cancel();
+    _sleepTimer = null;
     await _audio.stop();
     emit(const PlayerState());
+  }
+
+  void _onSleepTimerSet(SleepTimerSet event, Emitter<PlayerState> emit) {
+    _sleepTimer?.cancel();
+    final minutes = event.minutes;
+    if (minutes == null) {
+      _sleepTimer = null;
+      emit(state.copyWith(clearSleep: true));
+      return;
+    }
+    _sleepTimer = Timer(
+      Duration(minutes: minutes),
+      () => add(const StopRequested()),
+    );
+    emit(state.copyWith(sleepMinutes: minutes));
   }
 
   Future<void> _onVolumeChanged(
@@ -120,6 +139,7 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
 
   @override
   Future<void> close() async {
+    _sleepTimer?.cancel();
     await _subscription.cancel();
     await _audio.dispose();
     return super.close();

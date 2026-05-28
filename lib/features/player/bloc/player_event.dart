@@ -42,6 +42,15 @@ final class VolumeNudged extends PlayerEvent {
   List<Object?> get props => [up];
 }
 
+final class SleepTimerSet extends PlayerEvent {
+  const SleepTimerSet(this.minutes);
+
+  final int? minutes;
+
+  @override
+  List<Object?> get props => [minutes];
+}
+
 final class _PlaybackStatusUpdated extends PlayerEvent {
   const _PlaybackStatusUpdated(this.status);
 
