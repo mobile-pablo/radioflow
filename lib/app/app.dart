@@ -6,6 +6,7 @@ import 'package:radioflow/l10n/app_localizations.dart';
 import '../features/connectivity/connectivity_cubit.dart';
 import '../features/favorites/bloc/favorites_cubit.dart';
 import '../features/player/bloc/player_bloc.dart';
+import '../features/recents/recents_cubit.dart';
 import '../features/settings/bloc/settings_cubit.dart';
 import 'di.dart';
 import 'router.dart';
@@ -22,6 +23,7 @@ class RadioFlowApp extends StatelessWidget {
         BlocProvider<ConnectivityCubit>.value(
           value: getIt<ConnectivityCubit>(),
         ),
+        BlocProvider<RecentsCubit>.value(value: getIt<RecentsCubit>()),
         BlocProvider<SettingsCubit>.value(value: getIt<SettingsCubit>()),
       ],
       child: BlocBuilder<SettingsCubit, SettingsState>(

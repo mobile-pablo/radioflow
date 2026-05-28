@@ -38,5 +38,15 @@
       "count": { "type": "int" }
     }
   },
-  "openHomepage": "Station homepage"
+  "openHomepage": "Station homepage",
+  "favoritesCollection": "Your collection",
+  "recentlyPlayed": "Recently played",
+  "saved": "Saved",
+  "sortRecent": "Recent",
+  "stationCount": "{count, plural, =0{No stations} =1{1 station} other{{count} stations}}",
+  "@stationCount": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  }
 }

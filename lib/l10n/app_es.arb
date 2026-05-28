@@ -38,5 +38,15 @@
       "count": { "type": "int" }
     }
   },
-  "openHomepage": "Sitio de la emisora"
+  "openHomepage": "Sitio de la emisora",
+  "favoritesCollection": "Tu colección",
+  "recentlyPlayed": "Reproducidas",
+  "saved": "Guardadas",
+  "sortRecent": "Reciente",
+  "stationCount": "{count, plural, =0{Sin emisoras} =1{1 emisora} other{{count} emisoras}}",
+  "@stationCount": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  }
 }

@@ -21,7 +21,9 @@ class StationTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
+    final flag = Country.flagEmoji(station.countryCode);
     final subtitle = [
+      if (flag.isNotEmpty) flag,
       station.country,
       station.primaryTag,
     ].where((e) => e.isNotEmpty).join(' · ');
