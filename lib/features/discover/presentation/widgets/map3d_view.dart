@@ -57,7 +57,6 @@ class _Map3dViewState extends State<Map3dView> {
     await map.style.setProjection(
       StyleProjection(name: StyleProjectionName.globe),
     );
-    await _addBorders(map);
     await _publishStations();
     if (widget.focus != null) _flyToStation(widget.focus!);
   }
@@ -148,34 +147,6 @@ class _Map3dViewState extends State<Map3dView> {
         ]),
       );
       _sourceReady = true;
-    } on Object {
-      return;
-    }
-  }
-
-  Future<void> _addBorders(MapboxMap map) async {
-    try {
-      await map.style.addSource(
-        VectorSource(id: 'rf-admin', url: 'mapbox://mapbox.mapbox-streets-v8'),
-      );
-      await map.style.addLayer(
-        LineLayer(
-          id: 'rf-borders',
-          sourceId: 'rf-admin',
-          sourceLayer: 'admin',
-          lineColor: 0x73FFFFFF,
-          lineWidth: 0.8,
-        ),
-      );
-      await map.style.setStyleLayerProperty(
-        'rf-borders',
-        'filter',
-        jsonEncode([
-          '==',
-          ['get', 'admin_level'],
-          0,
-        ]),
-      );
     } on Object {
       return;
     }
