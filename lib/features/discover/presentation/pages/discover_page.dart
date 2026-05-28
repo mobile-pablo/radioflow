@@ -1,6 +1,7 @@
 import 'package:core/core.dart';
 import 'package:domain/domain.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:go_router/go_router.dart';
@@ -13,7 +14,9 @@ import '../../../settings/presentation/pages/settings_page.dart';
 import '../../bloc/map_cubit.dart';
 import '../../bloc/station_cluster.dart';
 import '../widgets/cluster_sheet.dart';
+import '../widgets/filter_sheet.dart';
 import '../widgets/rotating_globe.dart';
+import '../widgets/station_search_delegate.dart';
 
 class DiscoverPage extends StatelessWidget {
   const DiscoverPage({super.key});
@@ -36,8 +39,20 @@ class _DiscoverView extends StatefulWidget {
   State<_DiscoverView> createState() => _DiscoverViewState();
 }
 
-class _DiscoverViewState extends State<_DiscoverView> {
+class _DiscoverViewState extends State<_DiscoverView>
+    with SingleTickerProviderStateMixin {
+  final MapController _mapController = MapController();
+  late final AnimationController _flyController = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 900),
+  );
   bool _showGlobe = false;
+
+  @override
+  void dispose() {
+    _flyController.dispose();
+    super.dispose();
+  }
 
   void _onClusterTap(StationCluster cluster) {
     if (cluster.isSingle) {
@@ -54,9 +69,53 @@ class _DiscoverViewState extends State<_DiscoverView> {
     }
   }
 
+  Future<void> _openSearch() async {
+    final station = await showSearch<Station?>(
+      context: context,
+      delegate: StationSearchDelegate(
+        getIt<StationRepository>(),
+        hint: AppLocalizations.of(context).searchHint,
+      ),
+    );
+    if (station == null || !mounted) return;
+    context.read<PlayerBloc>().add(PlayStationRequested(station));
+    final geo = station.geo;
+    if (geo == null) return;
+    if (_showGlobe) setState(() => _showGlobe = false);
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      _flyTo(LatLng(geo.latitude, geo.longitude));
+    });
+  }
+
+  void _flyTo(LatLng destination, {double destinationZoom = 6}) {
+    final camera = _mapController.camera;
+    final startCenter = camera.center;
+    final startZoom = camera.zoom;
+    final curve = CurvedAnimation(
+      parent: _flyController,
+      curve: Curves.easeInOutCubic,
+    );
+    void tick() {
+      final t = curve.value;
+      _mapController.move(
+        LatLng(
+          startCenter.latitude +
+              (destination.latitude - startCenter.latitude) * t,
+          startCenter.longitude +
+              (destination.longitude - startCenter.longitude) * t,
+        ),
+        startZoom + (destinationZoom - startZoom) * t,
+      );
+    }
+
+    curve.addListener(tick);
+    _flyController
+      ..reset()
+      ..forward().whenComplete(() => curve.removeListener(tick));
+  }
+
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
     return BlocBuilder<MapCubit, MapState>(
       builder: (context, state) {
         return Stack(
@@ -76,37 +135,14 @@ class _DiscoverViewState extends State<_DiscoverView> {
               ),
             if (state.status == MapStatus.failure)
               _MapError(onRetry: () => context.read<MapCubit>().load()),
-            SafeArea(
-              child: Align(
-                alignment: Alignment.topLeft,
-                child: Padding(
-                  padding: const EdgeInsets.all(AppSpacing.md),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      _RoundButton(
-                        icon: Icons.settings_outlined,
-                        tooltip: l10n.settings,
-                        onTap: () => context.push(SettingsPage.path),
-                      ),
-                      const SizedBox(height: AppSpacing.sm),
-                      _RoundButton(
-                        icon: _showGlobe
-                            ? Icons.map_rounded
-                            : Icons.public_rounded,
-                        tooltip: _showGlobe ? l10n.mapView : l10n.globeView,
-                        onTap: () => setState(() => _showGlobe = !_showGlobe),
-                      ),
-                      const SizedBox(height: AppSpacing.sm),
-                      _RoundButton(
-                        icon: Icons.casino_rounded,
-                        tooltip: l10n.surprise,
-                        onTap: _onRandom,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+            _TopOverlay(
+              showGlobe: _showGlobe,
+              hasFilters: state.hasFilters,
+              onToggleGlobe: () => setState(() => _showGlobe = !_showGlobe),
+              onSettings: () => context.push(SettingsPage.path),
+              onFilters: () => FilterSheet.show(context),
+              onSearch: _openSearch,
+              onRandom: _onRandom,
             ),
           ],
         );
@@ -116,6 +152,7 @@ class _DiscoverViewState extends State<_DiscoverView> {
 
   Widget _buildMap(BuildContext context, MapState state) {
     return FlutterMap(
+      mapController: _mapController,
       options: MapOptions(
         initialCenter: const LatLng(20, 0),
         initialZoom: 2.5,
@@ -159,6 +196,182 @@ class _DiscoverViewState extends State<_DiscoverView> {
   }
 }
 
+class _TopOverlay extends StatelessWidget {
+  const _TopOverlay({
+    required this.showGlobe,
+    required this.hasFilters,
+    required this.onToggleGlobe,
+    required this.onSettings,
+    required this.onFilters,
+    required this.onSearch,
+    required this.onRandom,
+  });
+
+  final bool showGlobe;
+  final bool hasFilters;
+  final VoidCallback onToggleGlobe;
+  final VoidCallback onSettings;
+  final VoidCallback onFilters;
+  final VoidCallback onSearch;
+  final VoidCallback onRandom;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final textTheme = Theme.of(context).textTheme;
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.lg,
+          AppSpacing.sm,
+          AppSpacing.lg,
+          0,
+        ),
+        child: Column(
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: BlocBuilder<PlayerBloc, PlayerState>(
+                    buildWhen: (a, b) => a.station != b.station,
+                    builder: (context, player) {
+                      final country = player.station?.country;
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            l10n.nowExploring.toUpperCase(),
+                            style: textTheme.labelSmall,
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            country == null || country.isEmpty
+                                ? l10n.theWorld
+                                : country,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: textTheme.headlineSmall,
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+                ),
+                _GlassButton(
+                  icon: Icons.tune_rounded,
+                  active: hasFilters,
+                  onTap: onFilters,
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                _GlassButton(
+                  icon: showGlobe ? Icons.map_rounded : Icons.public_rounded,
+                  onTap: onToggleGlobe,
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                _GlassButton(icon: Icons.settings_outlined, onTap: onSettings),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.md),
+            _SearchPill(
+              hint: l10n.searchHint,
+              onTap: onSearch,
+              onRandom: onRandom,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SearchPill extends StatelessWidget {
+  const _SearchPill({
+    required this.hint,
+    required this.onTap,
+    required this.onRandom,
+  });
+
+  final String hint;
+  final VoidCallback onTap;
+  final VoidCallback onRandom;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Container(
+        height: 46,
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+        decoration: BoxDecoration(
+          color: AppColors.surface.withValues(alpha: 0.85),
+          borderRadius: BorderRadius.circular(AppSpacing.radiusPill),
+          border: Border.all(color: AppColors.line),
+        ),
+        child: Row(
+          children: [
+            const Icon(
+              Icons.search_rounded,
+              size: 18,
+              color: AppColors.textMuted,
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            Expanded(
+              child: Text(
+                hint,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyMedium?.copyWith(color: AppColors.textFaint),
+              ),
+            ),
+            GestureDetector(
+              onTap: onRandom,
+              behavior: HitTestBehavior.opaque,
+              child: const Padding(
+                padding: EdgeInsets.only(left: AppSpacing.sm),
+                child: Icon(
+                  Icons.casino_rounded,
+                  size: 20,
+                  color: AppColors.accent,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _GlassButton extends StatelessWidget {
+  const _GlassButton({
+    required this.icon,
+    required this.onTap,
+    this.active = false,
+  });
+
+  final IconData icon;
+  final VoidCallback onTap;
+  final bool active;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: AppColors.surface.withValues(alpha: 0.85),
+      shape: CircleBorder(
+        side: BorderSide(color: active ? AppColors.accent : AppColors.line),
+      ),
+      child: IconButton(
+        icon: Icon(icon, color: active ? AppColors.accent : null),
+        onPressed: onTap,
+      ),
+    );
+  }
+}
+
 class _MapDot extends StatelessWidget {
   const _MapDot({required this.cluster, required this.onTap});
 
@@ -191,27 +404,6 @@ class _MapDot extends StatelessWidget {
           ),
         ),
       ),
-    );
-  }
-}
-
-class _RoundButton extends StatelessWidget {
-  const _RoundButton({
-    required this.icon,
-    required this.tooltip,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final String tooltip;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: AppColors.surface.withValues(alpha: 0.85),
-      shape: const CircleBorder(side: BorderSide(color: AppColors.line)),
-      child: IconButton(icon: Icon(icon), tooltip: tooltip, onPressed: onTap),
     );
   }
 }
