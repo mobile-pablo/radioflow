@@ -70,6 +70,13 @@ flutter run
 
 No API key is needed — Radio Browser is open and free.
 
+## Tests
+
+```bash
+flutter test                       # app BLoC/cubit tests
+cd packages/data && flutter test   # DTO → entity mapping test
+```
+
 ## Platform to compile
 
 iOS and Android. Android is the primary target used for the demo recording.

@@ -71,6 +71,7 @@ dev_dependencies:
   # Monorepo task runner (Dart pub workspaces).
   melos: ^7.1.0
   flutter_launcher_icons: ^0.14.4
+  mocktail: ^1.0.5
 
 flutter_launcher_icons:
   android: true
