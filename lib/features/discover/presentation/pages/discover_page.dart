@@ -129,10 +129,8 @@ class _DiscoverViewState extends State<_DiscoverView>
             Positioned.fill(
               child: _showGlobe
                   ? Map3dView(
-                      clusters: state.clusters,
+                      stations: state.stations,
                       onPlay: _play,
-                      onZoom: (zoom) =>
-                          context.read<MapCubit>().onZoomChanged(zoom),
                       focus: _focusStation,
                     )
                   : _buildMap(context, state),

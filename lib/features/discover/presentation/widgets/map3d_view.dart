@@ -4,20 +4,16 @@ import 'package:domain/domain.dart';
 import 'package:flutter/widgets.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 
-import '../../bloc/station_cluster.dart';
-
 class Map3dView extends StatefulWidget {
   const Map3dView({
     super.key,
-    required this.clusters,
+    required this.stations,
     required this.onPlay,
-    required this.onZoom,
     this.focus,
   });
 
-  final List<StationCluster> clusters;
+  final List<Station> stations;
   final void Function(Station station) onPlay;
-  final void Function(double zoom) onZoom;
   final Station? focus;
 
   @override
@@ -25,14 +21,15 @@ class Map3dView extends StatefulWidget {
 }
 
 class _Map3dViewState extends State<Map3dView> {
-  MapboxMap? _map;
-  CircleAnnotationManager? _manager;
-  final Map<String, StationCluster> _byAnnotation = {};
-  double _zoom = 1.5;
-  int _syncGeneration = 0;
+  static const String _sourceId = 'rf-stations';
+  static const String _clusterLayer = 'rf-clusters';
+  static const String _pointLayer = 'rf-points';
 
-  // Built once so rebuilds never re-apply the initial camera (which would
-  // make the map jump back). Annotations are updated imperatively instead.
+  MapboxMap? _map;
+  bool _sourceReady = false;
+  double _zoom = 1.5;
+  final Map<String, Station> _byUuid = {};
+
   late final MapWidget _mapWidget = MapWidget(
     key: const ValueKey('discoverGlobe'),
     styleUri: MapboxStyles.SATELLITE,
@@ -41,16 +38,15 @@ class _Map3dViewState extends State<Map3dView> {
       zoom: 1.5,
     ),
     onMapCreated: _onMapCreated,
-    onCameraChangeListener: (data) {
-      _zoom = data.cameraState.zoom;
-      widget.onZoom(_zoom);
-    },
+    onCameraChangeListener: (data) => _zoom = data.cameraState.zoom,
+    // ignore: deprecated_member_use
+    onTapListener: _onTap,
   );
 
   @override
   void didUpdateWidget(Map3dView oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (!identical(oldWidget.clusters, widget.clusters)) _syncAnnotations();
+    if (!identical(oldWidget.stations, widget.stations)) _publishStations();
     if (widget.focus != null && oldWidget.focus != widget.focus) {
       _flyToStation(widget.focus!);
     }
@@ -62,22 +58,102 @@ class _Map3dViewState extends State<Map3dView> {
       StyleProjection(name: StyleProjectionName.globe),
     );
     await _addBorders(map);
-    final manager = await map.annotations.createCircleAnnotationManager();
-    manager.tapEvents(
-      onTap: (annotation) {
-        final cluster = _byAnnotation[annotation.id];
-        if (cluster == null) return;
-        widget.onPlay(cluster.primary);
-        _flyTo(
-          cluster.center.longitude,
-          cluster.center.latitude,
-          cluster.isSingle ? 8 : _zoom + 2,
-        );
-      },
-    );
-    _manager = manager;
-    await _syncAnnotations();
+    await _publishStations();
     if (widget.focus != null) _flyToStation(widget.focus!);
+  }
+
+  String _featureCollection() {
+    _byUuid.clear();
+    final features = <Map<String, Object?>>[];
+    for (final station in widget.stations) {
+      final geo = station.geo;
+      if (geo == null) continue;
+      _byUuid[station.uuid] = station;
+      features.add({
+        'type': 'Feature',
+        'properties': {'uuid': station.uuid},
+        'geometry': {
+          'type': 'Point',
+          'coordinates': [geo.longitude, geo.latitude],
+        },
+      });
+    }
+    return jsonEncode({'type': 'FeatureCollection', 'features': features});
+  }
+
+  Future<void> _publishStations() async {
+    final map = _map;
+    if (map == null || widget.stations.isEmpty) return;
+    final data = _featureCollection();
+    if (_sourceReady) {
+      await map.style.setStyleSourceProperty(_sourceId, 'data', data);
+      return;
+    }
+    try {
+      await map.style.addSource(
+        GeoJsonSource(
+          id: _sourceId,
+          data: data,
+          cluster: true,
+          clusterRadius: 60,
+          clusterMaxZoom: 14,
+        ),
+      );
+      await map.style.addLayer(
+        CircleLayer(
+          id: _clusterLayer,
+          sourceId: _sourceId,
+          circleColor: 0xFF38E1B0,
+          circleRadius: 16,
+          circleStrokeColor: 0xFF001A12,
+          circleStrokeWidth: 1.5,
+        ),
+      );
+      await map.style.setStyleLayerProperty(
+        _clusterLayer,
+        'filter',
+        jsonEncode([
+          'has',
+          'point_count',
+        ]),
+      );
+      await map.style.setStyleLayerProperty(
+        _clusterLayer,
+        'circle-radius',
+        jsonEncode([
+          'step',
+          ['get', 'point_count'],
+          12,
+          10,
+          16,
+          50,
+          22,
+          200,
+          30,
+        ]),
+      );
+      await map.style.addLayer(
+        CircleLayer(
+          id: _pointLayer,
+          sourceId: _sourceId,
+          circleColor: 0xFF38E1B0,
+          circleRadius: 5,
+          circleStrokeColor: 0xFF001A12,
+          circleStrokeWidth: 1,
+        ),
+      );
+      await map.style.setStyleLayerProperty(
+        _pointLayer,
+        'filter',
+        jsonEncode([
+          '!',
+          ['has', 'point_count'],
+        ]),
+      );
+      _sourceReady = true;
+    } on Object {
+      return;
+    }
   }
 
   Future<void> _addBorders(MapboxMap map) async {
@@ -108,37 +184,68 @@ class _Map3dViewState extends State<Map3dView> {
     }
   }
 
-  Future<void> _syncAnnotations() async {
-    final manager = _manager;
-    if (manager == null) return;
-    final clusters = widget.clusters;
-    final generation = ++_syncGeneration;
-    await manager.deleteAll();
-    if (generation != _syncGeneration || !mounted) return;
-    _byAnnotation.clear();
-    final options = [
-      for (final cluster in clusters)
-        CircleAnnotationOptions(
-          geometry: Point(
-            coordinates: Position(
-              cluster.center.longitude,
-              cluster.center.latitude,
-            ),
-          ),
-          circleColor: 0xFF38E1B0,
-          circleRadius: cluster.isSingle ? 5 : cluster.markerDiameter * 0.5,
-          circleStrokeColor: 0xFF000000,
-          circleStrokeWidth: 1,
+  Future<void> _onTap(MapContentGestureContext context) async {
+    final map = _map;
+    if (map == null) return;
+    try {
+      final features = await map.queryRenderedFeatures(
+        RenderedQueryGeometry.fromScreenCoordinate(context.touchPosition),
+        RenderedQueryOptions(
+          layerIds: [_clusterLayer, _pointLayer],
+          filter: null,
         ),
-    ];
-    final created = await manager.createMulti(options);
-    if (generation != _syncGeneration || !mounted) return;
-    final count = created.length < clusters.length
-        ? created.length
-        : clusters.length;
-    for (var i = 0; i < count; i++) {
-      final annotation = created[i];
-      if (annotation != null) _byAnnotation[annotation.id] = clusters[i];
+      );
+      for (final result in features) {
+        if (result == null) continue;
+        final feature = result.queriedFeature.feature;
+        final properties = feature['properties'];
+        if (properties is! Map) continue;
+        if (properties['point_count'] != null) {
+          await _playClusterLeaf(map, feature);
+          final geometry = feature['geometry'];
+          if (geometry is Map && geometry['coordinates'] is List) {
+            final coords = geometry['coordinates'] as List;
+            _flyTo(
+              (coords[0] as num).toDouble(),
+              (coords[1] as num).toDouble(),
+              _zoom + 2,
+            );
+          }
+          return;
+        }
+        final station = _byUuid[properties['uuid']];
+        if (station != null) {
+          widget.onPlay(station);
+          final geo = station.geo!;
+          _flyTo(geo.longitude, geo.latitude, _zoom < 6 ? 7 : _zoom);
+        }
+        return;
+      }
+    } on Object {
+      return;
+    }
+  }
+
+  Future<void> _playClusterLeaf(
+    MapboxMap map,
+    Map<Object?, Object?> feature,
+  ) async {
+    try {
+      final leaves = await map.getGeoJsonClusterLeaves(
+        _sourceId,
+        feature.cast<String?, Object?>(),
+        1,
+        0,
+      );
+      final collection = leaves.featureCollection;
+      if (collection == null || collection.isEmpty) return;
+      final properties = collection.first?['properties'];
+      if (properties is Map) {
+        final station = _byUuid[properties['uuid']];
+        if (station != null) widget.onPlay(station);
+      }
+    } on Object {
+      return;
     }
   }
 
