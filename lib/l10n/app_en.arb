@@ -116,5 +116,15 @@
   "locationDenied": "Location permission denied",
   "locationUnavailable": "Couldn't get your location",
   "edit": "Edit",
-  "done": "Done"
+  "done": "Done",
+  "welcomeTitlePre": "Tune into ",
+  "welcomeTitleHighlight": "50,000+ live stations",
+  "welcomeTitlePost": " from every corner of the world.",
+  "welcomeTuneTitle": "Drag the map to tune",
+  "welcomeTuneBody": "Like spinning a radio dial.",
+  "welcomeFreeTitle": "50k+ stations, zero ads",
+  "welcomeFreeBody": "Powered by the open Radio Browser community.",
+  "welcomeFavTitle": "Save your favorites",
+  "welcomeFavBody": "Everything you love, always one tap away.",
+  "getStarted": "Get Started"
 }

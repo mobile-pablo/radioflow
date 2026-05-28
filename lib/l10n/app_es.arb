@@ -116,5 +116,15 @@
   "locationDenied": "Permiso de ubicación denegado",
   "locationUnavailable": "No se pudo obtener tu ubicación",
   "edit": "Editar",
-  "done": "Listo"
+  "done": "Listo",
+  "welcomeTitlePre": "Sintoniza ",
+  "welcomeTitleHighlight": "más de 50.000 emisoras",
+  "welcomeTitlePost": " de cada rincón del mundo.",
+  "welcomeTuneTitle": "Arrastra el mapa para sintonizar",
+  "welcomeTuneBody": "Como girar el dial de una radio.",
+  "welcomeFreeTitle": "Más de 50k emisoras, sin anuncios",
+  "welcomeFreeBody": "Con la comunidad abierta de Radio Browser.",
+  "welcomeFavTitle": "Guarda tus favoritas",
+  "welcomeFavBody": "Todo lo que te gusta, siempre a un toque.",
+  "getStarted": "Empezar"
 }
