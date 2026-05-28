@@ -285,7 +285,24 @@ class _EmptyFavorites extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const RfLogo(size: 64, glow: false),
+            Container(
+              width: 96,
+              height: 96,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [
+                    AppColors.accent.withValues(alpha: 0.18),
+                    AppColors.accent.withValues(alpha: 0),
+                  ],
+                ),
+              ),
+              child: const Icon(
+                Icons.favorite_rounded,
+                size: 44,
+                color: AppColors.accent,
+              ),
+            ),
             const SizedBox(height: AppSpacing.lg),
             Text(
               l10n.favoritesEmptyTitle,
