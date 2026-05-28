@@ -5,9 +5,6 @@ import 'package:domain/domain.dart';
 import 'package:flutter/widgets.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 
-import '../../../../app/di.dart';
-import '../../../../shared/stations_holder.dart';
-
 class Map3dView extends StatefulWidget {
   const Map3dView({
     super.key,
@@ -78,20 +75,17 @@ class _Map3dViewState extends State<Map3dView> {
       final radiusSq = dLatE * dLatE + dLngE * dLngE;
       Station? nearest;
       double best = double.infinity;
-      var count = 0;
       for (final station in widget.stations) {
         final geo = station.geo;
         if (geo == null) continue;
         final dLat = geo.latitude - clat;
         final dLng = (geo.longitude - clng) * cosLat;
         final dist = dLat * dLat + dLng * dLng;
-        if (dist <= radiusSq) count++;
         if (dist < best) {
           best = dist;
           nearest = station;
         }
       }
-      getIt<StationsHolder>().circleCount.value = count;
       if (_armed &&
           !widget.locked &&
           nearest != null &&
@@ -121,8 +115,9 @@ class _Map3dViewState extends State<Map3dView> {
     await map.compass.updateSettings(
       CompassSettings(
         position: OrnamentPosition.TOP_LEFT,
-        marginTop: topPad,
+        marginTop: topPad + 12,
         marginLeft: 16,
+        fadeWhenFacingNorth: false,
       ),
     );
     await map.style.setProjection(

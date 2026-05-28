@@ -85,9 +85,16 @@ class CityBar extends StatelessWidget {
         final station = player.station;
         if (station == null) return const SizedBox.shrink();
         final all = getIt<StationsHolder>().stations;
-        final fallback = (station.stateRegion?.isNotEmpty ?? false)
-            ? station.stateRegion!
-            : station.country;
+        final hasRegion = station.stateRegion?.isNotEmpty ?? false;
+        final fallback = hasRegion ? station.stateRegion! : station.country;
+        final count = all
+            .where(
+              (s) => hasRegion
+                  ? s.stateRegion == station.stateRegion
+                  : s.country == station.country,
+            )
+            .take(50)
+            .length;
         final flag = station.countryCode.isEmpty
             ? ''
             : '${Country.flagEmoji(station.countryCode)} ';
@@ -112,22 +119,19 @@ class CityBar extends StatelessWidget {
                 const SizedBox(height: AppSpacing.sm),
                 Row(
                   children: [
-                    ValueListenableBuilder<int>(
-                      valueListenable: getIt<StationsHolder>().circleCount,
-                      builder: (context, count, _) => Container(
-                        width: 44,
-                        height: 44,
-                        alignment: Alignment.center,
-                        decoration: const BoxDecoration(
-                          color: AppColors.cream,
-                          shape: BoxShape.circle,
-                        ),
-                        child: Text(
-                          count > 0 ? '$count' : station.initials,
-                          style: textTheme.titleMedium?.copyWith(
-                            color: AppColors.ink,
-                            fontWeight: FontWeight.w700,
-                          ),
+                    Container(
+                      width: 44,
+                      height: 44,
+                      alignment: Alignment.center,
+                      decoration: const BoxDecoration(
+                        color: AppColors.cream,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Text(
+                        count > 0 ? '$count' : station.initials,
+                        style: textTheme.titleMedium?.copyWith(
+                          color: AppColors.ink,
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
                     ),
