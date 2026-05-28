@@ -5,13 +5,14 @@ import 'package:domain/domain.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:radioflow/l10n/app_localizations.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../app/di.dart';
+import '../../../../shared/stations_holder.dart';
 import '../../../../shared/widgets/skeleton_list.dart';
 import '../../../../shared/widgets/station_tile.dart';
 import '../../../favorites/widgets/favorite_button.dart';
 import '../../../player/bloc/player_bloc.dart';
+import '../../../recents/recents_cubit.dart';
 import '../../../stations/bloc/stations_bloc.dart';
 
 class SearchPage extends StatelessWidget {
@@ -36,20 +37,18 @@ class _SearchView extends StatefulWidget {
 }
 
 class _SearchViewState extends State<_SearchView> {
-  static const String _kHistory = 'search.history';
-
   final TextEditingController _controller = TextEditingController();
-  final SharedPreferences _prefs = getIt<SharedPreferences>();
   Timer? _debounce;
   late final Future<List<Station>> _recommended;
-  List<String> _history = const [];
   bool _hasQuery = false;
 
   @override
   void initState() {
     super.initState();
-    _recommended = getIt<StationRepository>().getStations(limit: 20);
-    _history = _prefs.getStringList(_kHistory) ?? const [];
+    final cached = getIt<StationsHolder>().stations;
+    _recommended = cached.isNotEmpty
+        ? Future.value(cached.take(30).toList())
+        : getIt<StationRepository>().getStations(limit: 20);
   }
 
   @override
@@ -66,30 +65,7 @@ class _SearchViewState extends State<_SearchView> {
       final query = value.trim();
       if (query.length < 2) return;
       context.read<StationsBloc>().add(StationsSearchChanged(query));
-      _saveHistory(query);
     });
-  }
-
-  void _saveHistory(String query) {
-    final next = [
-      query,
-      ..._history.where((e) => e.toLowerCase() != query.toLowerCase()),
-    ].take(8).toList();
-    _prefs.setStringList(_kHistory, next);
-    setState(() => _history = next);
-  }
-
-  void _runHistory(String query) {
-    _controller.text = query;
-    _controller.selection = TextSelection.collapsed(offset: query.length);
-    setState(() => _hasQuery = true);
-    context.read<StationsBloc>().add(StationsSearchChanged(query));
-    _saveHistory(query);
-  }
-
-  void _clearHistory() {
-    _prefs.remove(_kHistory);
-    setState(() => _history = const []);
   }
 
   void _clearQuery() {
@@ -154,58 +130,23 @@ class _SearchViewState extends State<_SearchView> {
   }
 
   Widget _discover(AppLocalizations l10n) {
-    final textTheme = Theme.of(context).textTheme;
     return ListView(
       padding: const EdgeInsets.only(bottom: 160),
       children: [
-        if (_history.isNotEmpty) ...[
-          Padding(
-            padding: const EdgeInsets.fromLTRB(
-              AppSpacing.lg,
-              AppSpacing.sm,
-              AppSpacing.sm,
-              AppSpacing.xs,
-            ),
-            child: Row(
+        BlocBuilder<RecentsCubit, RecentsState>(
+          builder: (context, state) {
+            if (state.recents.isEmpty) return const SizedBox.shrink();
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
-                  child: Text(
-                    l10n.recentSearches.toUpperCase(),
-                    style: textTheme.labelSmall,
-                  ),
-                ),
-                TextButton(
-                  onPressed: _clearHistory,
-                  child: Text(l10n.clearAll),
-                ),
+                _SectionLabel(label: l10n.recentlyPlayed),
+                _StationListView(stations: state.recents, shrinkWrap: true),
+                const SizedBox(height: AppSpacing.md),
               ],
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-            child: Wrap(
-              spacing: AppSpacing.sm,
-              runSpacing: AppSpacing.sm,
-              children: [
-                for (final term in _history)
-                  _HistoryChip(label: term, onTap: () => _runHistory(term)),
-              ],
-            ),
-          ),
-          const SizedBox(height: AppSpacing.lg),
-        ],
-        Padding(
-          padding: const EdgeInsets.fromLTRB(
-            AppSpacing.lg,
-            AppSpacing.sm,
-            AppSpacing.lg,
-            AppSpacing.xs,
-          ),
-          child: Text(
-            l10n.recommended.toUpperCase(),
-            style: textTheme.labelSmall,
-          ),
+            );
+          },
         ),
+        _SectionLabel(label: l10n.recommended),
         FutureBuilder<List<Station>>(
           future: _recommended,
           builder: (context, snapshot) {
@@ -218,6 +159,28 @@ class _SearchViewState extends State<_SearchView> {
           },
         ),
       ],
+    );
+  }
+}
+
+class _SectionLabel extends StatelessWidget {
+  const _SectionLabel({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        AppSpacing.md,
+        AppSpacing.lg,
+        AppSpacing.xs,
+      ),
+      child: Text(
+        label.toUpperCase(),
+        style: Theme.of(context).textTheme.labelSmall,
+      ),
     );
   }
 }
@@ -237,7 +200,9 @@ class _StationListView extends StatelessWidget {
         return ListView.builder(
           shrinkWrap: shrinkWrap,
           physics: shrinkWrap ? const NeverScrollableScrollPhysics() : null,
-          padding: shrinkWrap ? EdgeInsets.zero : const EdgeInsets.only(bottom: 160),
+          padding: shrinkWrap
+              ? EdgeInsets.zero
+              : const EdgeInsets.only(bottom: 160),
           itemCount: stations.length,
           itemBuilder: (context, index) {
             final station = stations[index];
@@ -252,44 +217,6 @@ class _StationListView extends StatelessWidget {
           },
         );
       },
-    );
-  }
-}
-
-class _HistoryChip extends StatelessWidget {
-  const _HistoryChip({required this.label, required this.onTap});
-
-  final String label;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      behavior: HitTestBehavior.opaque,
-      child: Container(
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.md,
-          vertical: AppSpacing.xs,
-        ),
-        decoration: BoxDecoration(
-          color: AppColors.surfaceAlt,
-          borderRadius: BorderRadius.circular(AppSpacing.radiusPill),
-          border: Border.all(color: AppColors.line),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(
-              Icons.history_rounded,
-              size: 15,
-              color: AppColors.textMuted,
-            ),
-            const SizedBox(width: 6),
-            Text(label, style: Theme.of(context).textTheme.bodyMedium),
-          ],
-        ),
-      ),
     );
   }
 }

@@ -38,22 +38,34 @@ class _DiscoverView extends StatefulWidget {
 
 class _DiscoverViewState extends State<_DiscoverView> {
   Station? _focusStation;
+  String? _selfUuid;
   final ValueNotifier<bool> _locked = ValueNotifier(false);
+  final ValueNotifier<bool> _searching = ValueNotifier(false);
   final ValueNotifier<Station?> _tuned = ValueNotifier(null);
 
   @override
   void dispose() {
     _locked.dispose();
+    _searching.dispose();
     _tuned.dispose();
     super.dispose();
   }
 
-  void _play(Station station) => context.read<PlayerBloc>().add(
-    PlayStationRequested(
-      station,
-      queue: context.read<MapCubit>().state.stations,
-    ),
-  );
+  void _play(Station station) {
+    _selfUuid = station.uuid;
+    _tuned.value = station;
+    context.read<PlayerBloc>().add(
+      PlayStationRequested(
+        station,
+        queue: context.read<MapCubit>().state.stations,
+      ),
+    );
+  }
+
+  void _onExternalStation(Station station) {
+    if (station.geo == null || station.uuid == _selfUuid) return;
+    setState(() => _focusStation = station);
+  }
 
   void _focusOn(Station station) {
     _play(station);
@@ -125,32 +137,39 @@ class _DiscoverViewState extends State<_DiscoverView> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<MapCubit, MapState>(
-      builder: (context, state) {
-        return Stack(
-          children: [
-            Positioned.fill(
-              child: ValueListenableBuilder<bool>(
-                valueListenable: _locked,
-                builder: (context, locked, _) => Map3dView(
-                  stations: state.stations,
-                  onPlay: _play,
-                  onCenterStation: _onCenterStation,
-                  locked: locked,
-                  focus: _focusStation,
+    return BlocListener<PlayerBloc, PlayerState>(
+      listenWhen: (a, b) => a.station?.uuid != b.station?.uuid,
+      listener: (context, state) {
+        final station = state.station;
+        if (station != null) _onExternalStation(station);
+      },
+      child: BlocBuilder<MapCubit, MapState>(
+        builder: (context, state) {
+          return Stack(
+            children: [
+              Positioned.fill(
+                child: ValueListenableBuilder<bool>(
+                  valueListenable: _locked,
+                  builder: (context, locked, _) => Map3dView(
+                    stations: state.stations,
+                    onPlay: _play,
+                    onCenterStation: _onCenterStation,
+                    onSearching: (v) => _searching.value = v,
+                    locked: locked,
+                    focus: _focusStation,
+                  ),
                 ),
               ),
-            ),
-            if (state.status == MapStatus.ready) ...[
-              ValueListenableBuilder<bool>(
-                valueListenable: _locked,
-                builder: (context, locked, _) =>
-                    ValueListenableBuilder<Station?>(
-                      valueListenable: _tuned,
-                      builder: (context, tuned, _) =>
-                          _Crosshair(tuned: tuned, locked: locked),
-                    ),
-              ),
+              if (state.status == MapStatus.ready) ...[
+                ValueListenableBuilder<bool>(
+                  valueListenable: _searching,
+                  builder: (context, searching, _) =>
+                      ValueListenableBuilder<Station?>(
+                        valueListenable: _tuned,
+                        builder: (context, tuned, _) =>
+                            _Crosshair(tuned: tuned, searching: searching),
+                      ),
+                ),
               ValueListenableBuilder<bool>(
                 valueListenable: _locked,
                 builder: (context, locked, _) => _RightActions(
@@ -169,8 +188,9 @@ class _DiscoverViewState extends State<_DiscoverView> {
             if (state.status == MapStatus.failure)
               _MapError(onRetry: () => context.read<MapCubit>().load()),
           ],
-        );
-      },
+          );
+        },
+      ),
     );
   }
 }
@@ -245,73 +265,85 @@ class _GlassButton extends StatelessWidget {
 }
 
 class _Crosshair extends StatelessWidget {
-  const _Crosshair({required this.tuned, required this.locked});
+  const _Crosshair({required this.tuned, required this.searching});
 
   final Station? tuned;
-  final bool locked;
+  final bool searching;
 
   @override
   Widget build(BuildContext context) {
-    final active = tuned != null;
-    final color = locked
-        ? AppColors.accentBlue
-        : (active ? AppColors.accent : AppColors.textMuted);
+    final showName = tuned != null && !searching;
     return IgnorePointer(
-      child: Align(
-        alignment: const Alignment(0, -0.12),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 92,
-              height: 92,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: color.withValues(alpha: active ? 0.1 : 0.04),
-                border: Border.all(
-                  color: color.withValues(alpha: 0.7),
-                  width: 2,
-                ),
-              ),
-              child: Center(
-                child: Container(
-                  width: 8,
-                  height: 8,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: color,
-                  ),
-                ),
-              ),
+      child: Center(
+        child: SizedBox(
+          width: 74,
+          height: 74,
+          child: CustomPaint(
+            painter: _RingPainter(dashed: searching),
+            child: Center(
+              child: showName
+                  ? Padding(
+                      padding: const EdgeInsets.all(10),
+                      child: Text(
+                        tuned!.name,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          color: AppColors.cream,
+                          fontSize: 10,
+                          height: 1.05,
+                          fontWeight: FontWeight.w600,
+                          shadows: [
+                            Shadow(color: Colors.black, blurRadius: 4),
+                          ],
+                        ),
+                      ),
+                    )
+                  : Container(
+                      width: 6,
+                      height: 6,
+                      decoration: const BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: AppColors.cream,
+                      ),
+                    ),
             ),
-            const SizedBox(height: AppSpacing.sm),
-            if (active)
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.md,
-                  vertical: AppSpacing.xs,
-                ),
-                decoration: BoxDecoration(
-                  color: AppColors.ink.withValues(alpha: 0.7),
-                  borderRadius: BorderRadius.circular(AppSpacing.radiusPill),
-                  border: Border.all(
-                    color: AppColors.accent.withValues(alpha: 0.4),
-                  ),
-                ),
-                child: Text(
-                  tuned!.name,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodySmall?.copyWith(color: AppColors.accent),
-                ),
-              ),
-          ],
+          ),
         ),
       ),
     );
   }
+}
+
+class _RingPainter extends CustomPainter {
+  _RingPainter({required this.dashed});
+
+  final bool dashed;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2
+      ..strokeCap = StrokeCap.round
+      ..color = AppColors.cream.withValues(alpha: 0.85);
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = size.width / 2 - 1;
+    if (!dashed) {
+      canvas.drawCircle(center, radius, paint);
+      return;
+    }
+    final rect = Rect.fromCircle(center: center, radius: radius);
+    const dash = 0.32;
+    const gap = 0.26;
+    for (double a = -math.pi / 2; a < math.pi * 1.5; a += dash + gap) {
+      canvas.drawArc(rect, a, dash, false, paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(_RingPainter oldDelegate) => oldDelegate.dashed != dashed;
 }
 
 class _MapError extends StatelessWidget {

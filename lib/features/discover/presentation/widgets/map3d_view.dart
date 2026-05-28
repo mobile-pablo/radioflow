@@ -11,6 +11,7 @@ class Map3dView extends StatefulWidget {
     required this.stations,
     required this.onPlay,
     required this.onCenterStation,
+    required this.onSearching,
     this.locked = false,
     this.focus,
   });
@@ -18,6 +19,7 @@ class Map3dView extends StatefulWidget {
   final List<Station> stations;
   final void Function(Station station) onPlay;
   final void Function(Station? station) onCenterStation;
+  final void Function(bool searching) onSearching;
   final bool locked;
   final Station? focus;
 
@@ -44,44 +46,64 @@ class _Map3dViewState extends State<Map3dView> {
       zoom: 1.5,
     ),
     onMapCreated: _onMapCreated,
-    onCameraChangeListener: (data) => _zoom = data.cameraState.zoom,
-    onMapIdleListener: (_) => _maybeTune(),
+    onCameraChangeListener: (data) {
+      _zoom = data.cameraState.zoom;
+      if (_armed) widget.onSearching(true);
+    },
+    onMapIdleListener: (_) => _settle(),
     // ignore: deprecated_member_use
-    onScrollListener: (_) => _armed = true,
+    onScrollListener: (_) {
+      _armed = true;
+      widget.onSearching(true);
+    },
     // ignore: deprecated_member_use
     onTapListener: _onTap,
   );
 
+  Future<void> _settle() async {
+    await _maybeTune();
+    if (mounted) widget.onSearching(false);
+  }
+
   Future<void> _maybeTune() async {
     final map = _map;
     if (!_armed || widget.locked || map == null) return;
-    final CameraState cam;
     try {
-      cam = await map.getCameraState();
+      final size = await map.getSize();
+      final w = size.width;
+      final h = size.height;
+      final radiusPx = w * 0.1;
+      final centerCoord = await map.coordinateForPixel(
+        ScreenCoordinate(x: w / 2, y: h / 2),
+      );
+      final edgeCoord = await map.coordinateForPixel(
+        ScreenCoordinate(x: w / 2 + radiusPx, y: h / 2),
+      );
+      final clat = centerCoord.coordinates.lat.toDouble();
+      final clng = centerCoord.coordinates.lng.toDouble();
+      final cosLat = math.cos(clat * math.pi / 180);
+      final dLatE = edgeCoord.coordinates.lat.toDouble() - clat;
+      final dLngE = (edgeCoord.coordinates.lng.toDouble() - clng) * cosLat;
+      final radiusSq = dLatE * dLatE + dLngE * dLngE;
+      Station? nearest;
+      double best = double.infinity;
+      for (final station in widget.stations) {
+        final geo = station.geo;
+        if (geo == null) continue;
+        final dLat = geo.latitude - clat;
+        final dLng = (geo.longitude - clng) * cosLat;
+        final dist = dLat * dLat + dLng * dLng;
+        if (dist < best) {
+          best = dist;
+          nearest = station;
+        }
+      }
+      widget.onCenterStation(
+        nearest != null && best <= radiusSq ? nearest : null,
+      );
     } on Object {
       return;
     }
-    final center = cam.center.coordinates;
-    final lng = center.lng.toDouble();
-    final lat = center.lat.toDouble();
-    final cosLat = math.cos(lat * math.pi / 180);
-    final threshold = 22 / math.pow(2, cam.zoom);
-    Station? nearest;
-    double best = double.infinity;
-    for (final station in widget.stations) {
-      final geo = station.geo;
-      if (geo == null) continue;
-      final dLat = geo.latitude - lat;
-      final dLng = (geo.longitude - lng) * cosLat;
-      final dist = dLat * dLat + dLng * dLng;
-      if (dist < best) {
-        best = dist;
-        nearest = station;
-      }
-    }
-    widget.onCenterStation(
-      nearest != null && best <= threshold * threshold ? nearest : null,
-    );
   }
 
   @override
@@ -95,6 +117,7 @@ class _Map3dViewState extends State<Map3dView> {
 
   Future<void> _onMapCreated(MapboxMap map) async {
     _map = map;
+    await map.scaleBar.updateSettings(ScaleBarSettings(enabled: false));
     await map.style.setProjection(
       StyleProjection(name: StyleProjectionName.globe),
     );
