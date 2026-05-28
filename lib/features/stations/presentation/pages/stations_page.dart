@@ -7,6 +7,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../app/di.dart';
 import '../../../../shared/widgets/station_tile.dart';
+import '../../../favorites/widgets/favorite_button.dart';
 import '../../../player/bloc/player_bloc.dart';
 import '../../bloc/stations_bloc.dart';
 
@@ -140,6 +141,7 @@ class _StationsList extends StatelessWidget {
                       return StationTile(
                         station: station,
                         active: station.uuid == activeUuid,
+                        trailing: FavoriteButton(station: station, size: 22),
                         onTap: () => context.read<PlayerBloc>().add(
                           PlayStationRequested(station),
                         ),

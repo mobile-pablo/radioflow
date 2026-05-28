@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../shared/widgets/station_artwork.dart';
+import '../../favorites/widgets/favorite_button.dart';
 import '../bloc/player_bloc.dart';
 import 'play_pause_button.dart';
 
@@ -64,7 +65,16 @@ class NowPlayingSheet extends StatelessWidget {
                 const SizedBox(height: AppSpacing.xl),
                 _VolumeRow(volume: state.volume),
                 const SizedBox(height: AppSpacing.xl),
-                const PlayPauseButton(size: 76, filled: true),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    FavoriteButton(station: station, size: 28),
+                    const SizedBox(width: AppSpacing.xl),
+                    const PlayPauseButton(size: 76, filled: true),
+                    const SizedBox(width: AppSpacing.xl),
+                    const SizedBox(width: 48),
+                  ],
+                ),
                 if (state.status == PlaybackStatus.error) ...[
                   const SizedBox(height: AppSpacing.lg),
                   Text(

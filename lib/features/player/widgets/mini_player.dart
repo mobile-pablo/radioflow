@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../shared/widgets/station_artwork.dart';
+import '../../favorites/widgets/favorite_button.dart';
 import '../bloc/player_bloc.dart';
 import 'now_playing_sheet.dart';
 import 'play_pause_button.dart';
@@ -63,7 +64,7 @@ class MiniPlayer extends StatelessWidget {
                         ],
                       ),
                     ),
-                    const SizedBox(width: AppSpacing.sm),
+                    FavoriteButton(station: station, size: 22),
                     const PlayPauseButton(size: 40),
                   ],
                 ),

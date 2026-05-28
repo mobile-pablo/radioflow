@@ -2,6 +2,7 @@ import 'package:core/core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../features/favorites/bloc/favorites_cubit.dart';
 import '../features/player/bloc/player_bloc.dart';
 import 'di.dart';
 import 'router.dart';
@@ -11,8 +12,11 @@ class RadioFlowApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider<PlayerBloc>.value(
-      value: getIt<PlayerBloc>(),
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider<PlayerBloc>.value(value: getIt<PlayerBloc>()),
+        BlocProvider<FavoritesCubit>.value(value: getIt<FavoritesCubit>()),
+      ],
       child: MaterialApp.router(
         title: 'RadioFlow',
         debugShowCheckedModeBanner: false,

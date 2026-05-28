@@ -3,6 +3,7 @@ import 'package:domain/domain.dart';
 import 'package:get_it/get_it.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../features/favorites/bloc/favorites_cubit.dart';
 import '../features/player/audio/audio_controller.dart';
 import '../features/player/bloc/player_bloc.dart';
 
@@ -28,5 +29,8 @@ Future<void> configureDependencies() async {
     ..registerLazySingleton<AudioController>(AudioController.new)
     ..registerLazySingleton<PlayerBloc>(
       () => PlayerBloc(getIt<AudioController>()),
+    )
+    ..registerLazySingleton<FavoritesCubit>(
+      () => FavoritesCubit(getIt<FavoritesRepository>())..load(),
     );
 }
