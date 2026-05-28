@@ -38,6 +38,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
             );
           }
           final loaded = state.status == FavoritesStatus.loaded;
+          final recents = context.watch<RecentsCubit>().state.recents;
           return CustomScrollView(
             slivers: [
               SliverToBoxAdapter(
@@ -107,10 +108,12 @@ class _FavoritesPageState extends State<FavoritesPage> {
                   child: Center(child: CircularProgressIndicator()),
                 )
               else if (favorites.isEmpty)
-                const SliverFillRemaining(
-                  hasScrollBody: false,
-                  child: _EmptyFavorites(),
-                )
+                recents.isEmpty
+                    ? const SliverFillRemaining(
+                        hasScrollBody: false,
+                        child: _EmptyFavorites(),
+                      )
+                    : const SliverToBoxAdapter(child: _SavedEmptyHint())
               else
                 SliverList.builder(
                   itemCount: favorites.length,
@@ -270,6 +273,39 @@ class _DeleteBackground extends StatelessWidget {
   }
 }
 
+class _SavedEmptyHint extends StatelessWidget {
+  const _SavedEmptyHint();
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.xl,
+        AppSpacing.xl,
+        AppSpacing.xl,
+        AppSpacing.xxl,
+      ),
+      child: Row(
+        children: [
+          const Icon(
+            Icons.favorite_border_rounded,
+            color: AppColors.textMuted,
+            size: 20,
+          ),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Text(
+              l10n.favoritesEmptyBody,
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _EmptyFavorites extends StatelessWidget {
   const _EmptyFavorites();
 
@@ -314,9 +350,10 @@ class _EmptyFavorites extends StatelessWidget {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: AppSpacing.lg),
-            FilledButton(
+            FilledButton.icon(
               onPressed: () => context.go(DiscoverPage.path),
-              child: Text(l10n.discoverStations),
+              icon: const Icon(Icons.public_rounded, size: 18),
+              label: Text(l10n.discoverStations),
             ),
           ],
         ),
