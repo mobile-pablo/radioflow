@@ -9,6 +9,8 @@ class AudioController {
 
   Stream<PlayerState> get playerStateStream => _player.playerStateStream;
 
+  Stream<IcyMetadata?> get icyMetadataStream => _player.icyMetadataStream;
+
   double get volume => _player.volume;
 
   Future<void> playStation(Station station) async {

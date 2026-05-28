@@ -79,7 +79,7 @@ class MiniPlayer extends StatelessWidget {
                           Text(
                             state.isBuffering
                                 ? AppLocalizations.of(context).buffering
-                                : subtitle,
+                                : (state.track ?? subtitle),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: Theme.of(context).textTheme.bodySmall,

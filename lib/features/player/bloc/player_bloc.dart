@@ -19,14 +19,19 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
     on<VolumeNudged>(_onVolumeNudged);
     on<SleepTimerSet>(_onSleepTimerSet);
     on<_PlaybackStatusUpdated>(_onStatusUpdated);
+    on<_TrackUpdated>(_onTrackUpdated);
 
     _subscription = _audio.playerStateStream.listen(
       (playerState) => add(_PlaybackStatusUpdated(_mapStatus(playerState))),
+    );
+    _icySubscription = _audio.icyMetadataStream.listen(
+      (metadata) => add(_TrackUpdated(metadata?.info?.title)),
     );
   }
 
   final AudioController _audio;
   late final StreamSubscription<ja.PlayerState> _subscription;
+  late final StreamSubscription<ja.IcyMetadata?> _icySubscription;
   Timer? _sleepTimer;
 
   Future<void> _onPlayStation(
@@ -38,6 +43,7 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
         status: PlaybackStatus.loading,
         station: event.station,
         clearError: true,
+        clearTrack: true,
       ),
     );
     try {
@@ -121,6 +127,15 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
     );
   }
 
+  void _onTrackUpdated(_TrackUpdated event, Emitter<PlayerState> emit) {
+    final track = event.track?.trim();
+    if (track == null || track.isEmpty) {
+      emit(state.copyWith(clearTrack: true));
+    } else {
+      emit(state.copyWith(track: track));
+    }
+  }
+
   PlaybackStatus _mapStatus(ja.PlayerState playerState) {
     switch (playerState.processingState) {
       case ja.ProcessingState.idle:
@@ -141,6 +156,7 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
   Future<void> close() async {
     _sleepTimer?.cancel();
     await _subscription.cancel();
+    await _icySubscription.cancel();
     await _audio.dispose();
     return super.close();
   }

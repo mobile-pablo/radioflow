@@ -112,10 +112,7 @@ class _Map3dViewState extends State<Map3dView> {
       await map.style.setStyleLayerProperty(
         _clusterLayer,
         'filter',
-        jsonEncode([
-          'has',
-          'point_count',
-        ]),
+        jsonEncode(['has', 'point_count']),
       );
       await map.style.setStyleLayerProperty(
         _clusterLayer,

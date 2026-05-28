@@ -59,3 +59,12 @@ final class _PlaybackStatusUpdated extends PlayerEvent {
   @override
   List<Object?> get props => [status];
 }
+
+final class _TrackUpdated extends PlayerEvent {
+  const _TrackUpdated(this.track);
+
+  final String? track;
+
+  @override
+  List<Object?> get props => [track];
+}

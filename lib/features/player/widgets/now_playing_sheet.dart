@@ -59,6 +59,18 @@ class NowPlayingSheet extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: textTheme.headlineSmall,
                 ),
+                if (state.track != null) ...[
+                  const SizedBox(height: AppSpacing.xs),
+                  Text(
+                    state.track!,
+                    textAlign: TextAlign.center,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: textTheme.bodyMedium?.copyWith(
+                      color: AppColors.accent,
+                    ),
+                  ),
+                ],
                 if (location.isNotEmpty) ...[
                   const SizedBox(height: AppSpacing.xs),
                   Text(location, style: textTheme.bodySmall),

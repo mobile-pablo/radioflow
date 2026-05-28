@@ -9,6 +9,7 @@ final class PlayerState extends Equatable {
     this.volume = 1,
     this.errorMessage,
     this.sleepMinutes,
+    this.track,
   });
 
   final PlaybackStatus status;
@@ -16,6 +17,7 @@ final class PlayerState extends Equatable {
   final double volume;
   final String? errorMessage;
   final int? sleepMinutes;
+  final String? track;
 
   bool get isActive => station != null && status != PlaybackStatus.idle;
 
@@ -31,6 +33,8 @@ final class PlayerState extends Equatable {
     bool clearError = false,
     int? sleepMinutes,
     bool clearSleep = false,
+    String? track,
+    bool clearTrack = false,
   }) {
     return PlayerState(
       status: status ?? this.status,
@@ -38,6 +42,7 @@ final class PlayerState extends Equatable {
       volume: volume ?? this.volume,
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
       sleepMinutes: clearSleep ? null : (sleepMinutes ?? this.sleepMinutes),
+      track: clearTrack ? null : (track ?? this.track),
     );
   }
 
@@ -48,5 +53,6 @@ final class PlayerState extends Equatable {
     volume,
     errorMessage,
     sleepMinutes,
+    track,
   ];
 }
