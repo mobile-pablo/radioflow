@@ -1,5 +1,4 @@
 import 'package:core/core.dart';
-import 'package:domain/domain.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -23,9 +22,6 @@ class FavoritesPage extends StatefulWidget {
 
 class _FavoritesPageState extends State<FavoritesPage> {
   bool _sortByName = false;
-
-  void _play(Station station) =>
-      context.read<PlayerBloc>().add(PlayStationRequested(station));
 
   @override
   Widget build(BuildContext context) {
@@ -131,7 +127,9 @@ class _FavoritesPageState extends State<FavoritesPage> {
                         builder: (context, player) => StationTile(
                           station: station,
                           active: player.station?.uuid == station.uuid,
-                          onTap: () => _play(station),
+                          onTap: () => context.read<PlayerBloc>().add(
+                            PlayStationRequested(station, queue: favorites),
+                          ),
                         ),
                       ),
                     );
@@ -184,7 +182,7 @@ class _RecentsStrip extends StatelessWidget {
                     width: 72,
                     child: GestureDetector(
                       onTap: () => context.read<PlayerBloc>().add(
-                        PlayStationRequested(station),
+                        PlayStationRequested(station, queue: state.recents),
                       ),
                       behavior: HitTestBehavior.opaque,
                       child: Column(

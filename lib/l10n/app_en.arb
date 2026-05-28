@@ -103,6 +103,8 @@
       "count": { "type": "int" }
     }
   },
+  "visitWebsite": "Visit website",
+  "showOnGlobe": "Show on the globe",
   "nearMe": "Stations near me",
   "locationDenied": "Location permission denied",
   "locationUnavailable": "Couldn't get your location",

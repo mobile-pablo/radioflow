@@ -62,8 +62,12 @@ class _DiscoverViewState extends State<_DiscoverView>
     super.dispose();
   }
 
-  void _play(Station station) =>
-      context.read<PlayerBloc>().add(PlayStationRequested(station));
+  void _play(Station station) => context.read<PlayerBloc>().add(
+    PlayStationRequested(
+      station,
+      queue: context.read<MapCubit>().state.stations,
+    ),
+  );
 
   void _focusOn(Station station) {
     _play(station);

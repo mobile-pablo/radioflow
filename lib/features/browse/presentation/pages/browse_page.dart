@@ -232,7 +232,7 @@ class _Results extends StatelessWidget {
                   active: station.uuid == activeUuid,
                   trailing: FavoriteButton(station: station, size: 22),
                   onTap: () => context.read<PlayerBloc>().add(
-                    PlayStationRequested(station),
+                    PlayStationRequested(station, queue: stations),
                   ),
                 );
               },

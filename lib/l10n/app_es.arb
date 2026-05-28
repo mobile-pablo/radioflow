@@ -103,6 +103,8 @@
       "count": { "type": "int" }
     }
   },
+  "visitWebsite": "Visitar sitio web",
+  "showOnGlobe": "Mostrar en el globo",
   "nearMe": "Emisoras cerca de mí",
   "locationDenied": "Permiso de ubicación denegado",
   "locationUnavailable": "No se pudo obtener tu ubicación",

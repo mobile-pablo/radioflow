@@ -3,11 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:radioflow/l10n/app_localizations.dart';
 
-import '../../../shared/widgets/station_artwork.dart';
-import '../../favorites/widgets/favorite_button.dart';
 import '../bloc/player_bloc.dart';
+import '../presentation/pages/equalizer_page.dart';
+import '../presentation/pages/sleep_timer_page.dart';
 import 'now_playing_sheet.dart';
-import 'play_pause_button.dart';
 
 class MiniPlayer extends StatelessWidget {
   const MiniPlayer({super.key});
@@ -18,80 +17,80 @@ class MiniPlayer extends StatelessWidget {
       buildWhen: (a, b) =>
           a.station != b.station ||
           a.status != b.status ||
+          a.track != b.track ||
           a.isActive != b.isActive,
       builder: (context, state) {
         final station = state.station;
         if (station == null || !state.isActive) {
           return const SizedBox.shrink();
         }
+        final l10n = AppLocalizations.of(context);
         final flag = Country.flagEmoji(station.countryCode);
         final subtitle = [
           if (flag.isNotEmpty) flag,
           if (station.country.isNotEmpty) station.country,
-          if (station.primaryTag.isNotEmpty) station.primaryTag,
         ].join(' · ');
+        final textTheme = Theme.of(context).textTheme;
         return Container(
-          margin: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-          decoration: BoxDecoration(
-            color: AppColors.surface.withValues(alpha: 0.96),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: AppColors.lineStrong),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.6),
-                blurRadius: 24,
-                offset: const Offset(0, 8),
-              ),
-            ],
+          decoration: const BoxDecoration(
+            color: Color(0xEB000000),
+            border: Border(top: BorderSide(color: AppColors.line)),
           ),
-          child: Material(
-            type: MaterialType.transparency,
-            child: InkWell(
-              borderRadius: BorderRadius.circular(20),
-              onTap: () => NowPlayingSheet.show(context),
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(10, 10, 12, 10),
-                child: Row(
-                  children: [
-                    StationArtwork(station: station, size: 40, radius: 12),
-                    const SizedBox(width: AppSpacing.md),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Row(
-                            children: [
-                              _PlayingDot(playing: state.isPlaying),
-                              const SizedBox(width: 6),
-                              Expanded(
-                                child: Text(
-                                  station.name,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: Theme.of(
-                                    context,
-                                  ).textTheme.titleMedium,
-                                ),
-                              ),
-                            ],
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 10, 8, 10),
+            child: Row(
+              children: [
+                Expanded(
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () => NowPlayingSheet.show(context),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          station.name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: textTheme.titleMedium?.copyWith(
+                            color: AppColors.accent,
                           ),
-                          Text(
-                            state.isBuffering
-                                ? AppLocalizations.of(context).buffering
-                                : (state.track ?? subtitle),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: Theme.of(context).textTheme.bodySmall,
-                          ),
-                        ],
-                      ),
+                        ),
+                        Text(
+                          state.isBuffering
+                              ? l10n.buffering
+                              : (state.track ?? subtitle),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: textTheme.bodySmall,
+                        ),
+                      ],
                     ),
-                    FavoriteButton(station: station, size: 20),
-                    const PlayPauseButton(size: 40),
-                  ],
+                  ),
                 ),
-              ),
+                _IconBtn(
+                  icon: Icons.tune_rounded,
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => const EqualizerPage(),
+                    ),
+                  ),
+                ),
+                _IconBtn(
+                  icon: Icons.schedule_rounded,
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => const SleepTimerPage(),
+                    ),
+                  ),
+                ),
+                const _StopPlayButton(),
+                _IconBtn(
+                  icon: Icons.skip_next_rounded,
+                  onTap: () =>
+                      context.read<PlayerBloc>().add(const PlayNext()),
+                ),
+              ],
             ),
           ),
         );
@@ -100,28 +99,49 @@ class MiniPlayer extends StatelessWidget {
   }
 }
 
-class _PlayingDot extends StatelessWidget {
-  const _PlayingDot({required this.playing});
+class _IconBtn extends StatelessWidget {
+  const _IconBtn({required this.icon, required this.onTap});
 
-  final bool playing;
+  final IconData icon;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 6,
-      height: 6,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: playing ? AppColors.accent : AppColors.textFaint,
-        boxShadow: playing
-            ? [
-                BoxShadow(
-                  color: AppColors.accent.withValues(alpha: 0.8),
-                  blurRadius: 8,
+    return IconButton(
+      onPressed: onTap,
+      visualDensity: VisualDensity.compact,
+      icon: Icon(icon, size: 22, color: AppColors.textPrimary),
+    );
+  }
+}
+
+class _StopPlayButton extends StatelessWidget {
+  const _StopPlayButton();
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<PlayerBloc, PlayerState>(
+      buildWhen: (a, b) => a.status != b.status,
+      builder: (context, state) {
+        if (state.isBuffering) {
+          return const SizedBox.square(
+            dimension: 40,
+            child: Center(
+              child: SizedBox.square(
+                dimension: 18,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2.4,
+                  color: AppColors.accent,
                 ),
-              ]
-            : null,
-      ),
+              ),
+            ),
+          );
+        }
+        return _IconBtn(
+          icon: state.isPlaying ? Icons.stop_rounded : Icons.play_arrow_rounded,
+          onTap: () => context.read<PlayerBloc>().add(const PlayPauseToggled()),
+        );
+      },
     );
   }
 }

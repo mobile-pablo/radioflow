@@ -13,6 +13,8 @@ part 'player_state.dart';
 class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
   PlayerBloc(this._audio) : super(const PlayerState()) {
     on<PlayStationRequested>(_onPlayStation);
+    on<PlayNext>(_onPlayNext);
+    on<PlayPrevious>(_onPlayPrevious);
     on<PlayPauseToggled>(_onTogglePlayPause);
     on<StopRequested>(_onStop);
     on<VolumeChanged>(_onVolumeChanged);
@@ -38,10 +40,16 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
     PlayStationRequested event,
     Emitter<PlayerState> emit,
   ) async {
+    final queue = event.queue.isNotEmpty
+        ? event.queue
+        : (state.queue.any((s) => s.uuid == event.station.uuid)
+              ? state.queue
+              : [event.station]);
     emit(
       state.copyWith(
         status: PlaybackStatus.loading,
         station: event.station,
+        queue: queue,
         clearError: true,
         clearTrack: true,
       ),
@@ -56,6 +64,22 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
         ),
       );
     }
+  }
+
+  void _onPlayNext(PlayNext event, Emitter<PlayerState> emit) =>
+      _step(1, emit);
+
+  void _onPlayPrevious(PlayPrevious event, Emitter<PlayerState> emit) =>
+      _step(-1, emit);
+
+  void _step(int delta, Emitter<PlayerState> emit) {
+    final queue = state.queue;
+    final current = state.station;
+    if (queue.length < 2 || current == null) return;
+    final index = queue.indexWhere((s) => s.uuid == current.uuid);
+    if (index < 0) return;
+    final next = queue[(index + delta + queue.length) % queue.length];
+    add(PlayStationRequested(next, queue: queue));
   }
 
   Future<void> _onTogglePlayPause(

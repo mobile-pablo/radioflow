@@ -10,6 +10,7 @@ final class PlayerState extends Equatable {
     this.errorMessage,
     this.sleepMinutes,
     this.track,
+    this.queue = const [],
   });
 
   final PlaybackStatus status;
@@ -18,6 +19,7 @@ final class PlayerState extends Equatable {
   final String? errorMessage;
   final int? sleepMinutes;
   final String? track;
+  final List<Station> queue;
 
   bool get isActive => station != null && status != PlaybackStatus.idle;
 
@@ -35,6 +37,7 @@ final class PlayerState extends Equatable {
     bool clearSleep = false,
     String? track,
     bool clearTrack = false,
+    List<Station>? queue,
   }) {
     return PlayerState(
       status: status ?? this.status,
@@ -43,6 +46,7 @@ final class PlayerState extends Equatable {
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
       sleepMinutes: clearSleep ? null : (sleepMinutes ?? this.sleepMinutes),
       track: clearTrack ? null : (track ?? this.track),
+      queue: queue ?? this.queue,
     );
   }
 
@@ -54,5 +58,6 @@ final class PlayerState extends Equatable {
     errorMessage,
     sleepMinutes,
     track,
+    queue,
   ];
 }

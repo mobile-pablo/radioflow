@@ -8,12 +8,21 @@ sealed class PlayerEvent extends Equatable {
 }
 
 final class PlayStationRequested extends PlayerEvent {
-  const PlayStationRequested(this.station);
+  const PlayStationRequested(this.station, {this.queue = const []});
 
   final Station station;
+  final List<Station> queue;
 
   @override
-  List<Object?> get props => [station];
+  List<Object?> get props => [station, queue];
+}
+
+final class PlayNext extends PlayerEvent {
+  const PlayNext();
+}
+
+final class PlayPrevious extends PlayerEvent {
+  const PlayPrevious();
 }
 
 final class PlayPauseToggled extends PlayerEvent {
