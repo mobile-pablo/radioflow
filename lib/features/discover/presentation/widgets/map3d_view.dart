@@ -5,6 +5,9 @@ import 'package:domain/domain.dart';
 import 'package:flutter/widgets.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 
+import '../../../../app/di.dart';
+import '../../../../shared/stations_holder.dart';
+
 class Map3dView extends StatefulWidget {
   const Map3dView({
     super.key,
@@ -55,7 +58,7 @@ class _Map3dViewState extends State<Map3dView> {
 
   Future<void> _maybeTune() async {
     final map = _map;
-    if (!_armed || widget.locked || map == null) return;
+    if (map == null) return;
     try {
       final size = await map.getSize();
       final w = size.width;
@@ -75,20 +78,26 @@ class _Map3dViewState extends State<Map3dView> {
       final radiusSq = dLatE * dLatE + dLngE * dLngE;
       Station? nearest;
       double best = double.infinity;
+      var count = 0;
       for (final station in widget.stations) {
         final geo = station.geo;
         if (geo == null) continue;
         final dLat = geo.latitude - clat;
         final dLng = (geo.longitude - clng) * cosLat;
         final dist = dLat * dLat + dLng * dLng;
+        if (dist <= radiusSq) count++;
         if (dist < best) {
           best = dist;
           nearest = station;
         }
       }
-      widget.onCenterStation(
-        nearest != null && best <= radiusSq ? nearest : null,
-      );
+      getIt<StationsHolder>().circleCount.value = count;
+      if (_armed &&
+          !widget.locked &&
+          nearest != null &&
+          best <= radiusSq) {
+        widget.onCenterStation(nearest);
+      }
     } on Object {
       return;
     }
@@ -105,13 +114,14 @@ class _Map3dViewState extends State<Map3dView> {
 
   Future<void> _onMapCreated(MapboxMap map) async {
     _map = map;
+    final topPad = MediaQuery.of(context).padding.top;
     await map.scaleBar.updateSettings(ScaleBarSettings(enabled: false));
     await map.logo.updateSettings(LogoSettings(enabled: false));
     await map.attribution.updateSettings(AttributionSettings(enabled: false));
     await map.compass.updateSettings(
       CompassSettings(
         position: OrnamentPosition.TOP_LEFT,
-        marginTop: MediaQuery.of(context).padding.top,
+        marginTop: topPad,
         marginLeft: 16,
       ),
     );

@@ -78,6 +78,11 @@ class _DiscoverViewState extends State<_DiscoverView> {
     if (playing?.uuid != station.uuid) _play(station);
   }
 
+  void _onRandom() {
+    final station = context.read<MapCubit>().randomStation();
+    if (station != null) _focusOn(station);
+  }
+
   Future<void> _onLocate() async {
     final messenger = ScaffoldMessenger.of(context);
     final l10n = AppLocalizations.of(context);
@@ -162,6 +167,7 @@ class _DiscoverViewState extends State<_DiscoverView> {
                   onShare: _openShare,
                   onLocate: _onLocate,
                   onLock: () => _locked.value = !locked,
+                  onRandom: _onRandom,
                 ),
               ),
             ],
@@ -186,12 +192,14 @@ class _RightActions extends StatelessWidget {
     required this.onShare,
     required this.onLocate,
     required this.onLock,
+    required this.onRandom,
   });
 
   final bool locked;
   final VoidCallback onShare;
   final VoidCallback onLocate;
   final VoidCallback onLock;
+  final VoidCallback onRandom;
 
   @override
   Widget build(BuildContext context) {
@@ -215,6 +223,8 @@ class _RightActions extends StatelessWidget {
                 active: locked,
                 onTap: onLock,
               ),
+              const SizedBox(height: AppSpacing.md),
+              _GlassButton(icon: Icons.shuffle_rounded, onTap: onRandom),
             ],
           ),
         ),

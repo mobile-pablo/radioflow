@@ -1,5 +1,3 @@
-import 'dart:math' as math;
-
 import 'package:core/core.dart';
 import 'package:domain/domain.dart';
 import 'package:flutter/material.dart';
@@ -78,22 +76,6 @@ class CityBar extends StatelessWidget {
     return '$hh:$mm';
   }
 
-  int _nearbyCount(Station station, List<Station> all) {
-    final geo = station.geo;
-    if (geo == null) {
-      return all.where((s) => s.country == station.country).length;
-    }
-    const radius = 0.55;
-    final cosLat = math.cos(geo.latitude * math.pi / 180);
-    return all.where((s) {
-      final g = s.geo;
-      if (g == null) return false;
-      final dLat = g.latitude - geo.latitude;
-      final dLng = (g.longitude - geo.longitude) * cosLat;
-      return dLat * dLat + dLng * dLng <= radius * radius;
-    }).length;
-  }
-
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
@@ -109,7 +91,6 @@ class CityBar extends StatelessWidget {
         final flag = station.countryCode.isEmpty
             ? ''
             : '${Country.flagEmoji(station.countryCode)} ';
-        final count = _nearbyCount(station, all);
         return SwipeUpToOpen(
           onOpen: () =>
               StationListSheet.show(context, station: station, stations: all),
@@ -121,7 +102,7 @@ class CityBar extends StatelessWidget {
               AppSpacing.md,
             ),
             decoration: const BoxDecoration(
-              color: AppColors.surfaceAlt,
+              color: AppColors.surfaceHi,
               border: Border(top: BorderSide(color: AppColors.line)),
             ),
             child: Column(
@@ -131,19 +112,22 @@ class CityBar extends StatelessWidget {
                 const SizedBox(height: AppSpacing.sm),
                 Row(
                   children: [
-                    Container(
-                      width: 44,
-                      height: 44,
-                      alignment: Alignment.center,
-                      decoration: const BoxDecoration(
-                        color: AppColors.cream,
-                        shape: BoxShape.circle,
-                      ),
-                      child: Text(
-                        count > 0 ? '$count' : station.initials,
-                        style: textTheme.titleMedium?.copyWith(
-                          color: AppColors.ink,
-                          fontWeight: FontWeight.w700,
+                    ValueListenableBuilder<int>(
+                      valueListenable: getIt<StationsHolder>().circleCount,
+                      builder: (context, count, _) => Container(
+                        width: 44,
+                        height: 44,
+                        alignment: Alignment.center,
+                        decoration: const BoxDecoration(
+                          color: AppColors.cream,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Text(
+                          count > 0 ? '$count' : station.initials,
+                          style: textTheme.titleMedium?.copyWith(
+                            color: AppColors.ink,
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
                       ),
                     ),

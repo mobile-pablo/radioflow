@@ -68,23 +68,7 @@ class SettingsPage extends StatelessWidget {
           ),
           _SettingsGroup(
             title: l10n.appearance,
-            children: [
-              BlocBuilder<SettingsCubit, SettingsState>(
-                buildWhen: (a, b) => a.pureBlack != b.pureBlack,
-                builder: (context, state) => _SettingsSegment(
-                  label: l10n.theme,
-                  selected: state.pureBlack ? 'pureBlack' : 'dark',
-                  options: [
-                    ('dark', l10n.themeDark),
-                    ('pureBlack', l10n.themePureBlack),
-                  ],
-                  onSelected: (id) => context
-                      .read<SettingsCubit>()
-                      .setPureBlack(value: id == 'pureBlack'),
-                ),
-              ),
-              const _LanguageRow(),
-            ],
+            children: const [_LanguageRow()],
           ),
           _SettingsGroup(
             title: l10n.dataStorage,
@@ -387,81 +371,6 @@ class _SettingsToggle extends StatelessWidget {
       label: label,
       description: description,
       trailing: Switch(value: value, onChanged: onChanged),
-    );
-  }
-}
-
-class _SettingsSegment extends StatelessWidget {
-  const _SettingsSegment({
-    required this.label,
-    required this.selected,
-    required this.options,
-    required this.onSelected,
-  });
-
-  final String label;
-  final String selected;
-  final List<(String, String)> options;
-  final ValueChanged<String> onSelected;
-
-  @override
-  Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-    return Padding(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.lg,
-        vertical: AppSpacing.md,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(label, style: textTheme.titleMedium),
-          const SizedBox(height: AppSpacing.sm),
-          Container(
-            padding: const EdgeInsets.all(3),
-            decoration: BoxDecoration(
-              color: AppColors.surfaceAlt,
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: AppColors.line),
-            ),
-            child: Row(
-              children: [
-                for (final (id, optionLabel) in options)
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: () => onSelected(id),
-                      behavior: HitTestBehavior.opaque,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 7),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(8),
-                          color: selected == id
-                              ? AppColors.accent.withValues(alpha: 0.12)
-                              : Colors.transparent,
-                          border: Border.all(
-                            color: selected == id
-                                ? AppColors.accent.withValues(alpha: 0.3)
-                                : Colors.transparent,
-                          ),
-                        ),
-                        child: Text(
-                          optionLabel,
-                          textAlign: TextAlign.center,
-                          style: textTheme.bodyMedium?.copyWith(
-                            fontWeight: FontWeight.w600,
-                            color: selected == id
-                                ? AppColors.accent
-                                : AppColors.textSecondary,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-          ),
-        ],
-      ),
     );
   }
 }

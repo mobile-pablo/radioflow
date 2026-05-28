@@ -40,7 +40,7 @@ class MiniPlayer extends StatelessWidget {
           },
           child: Container(
             decoration: const BoxDecoration(
-              color: Color(0xEB000000),
+              color: AppColors.surfaceAlt,
               border: Border(top: BorderSide(color: AppColors.line)),
             ),
             child: Padding(
