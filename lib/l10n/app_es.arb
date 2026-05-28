@@ -84,5 +84,28 @@
     "placeholders": {
       "count": { "type": "int" }
     }
-  }
+  },
+  "shareStation": "Compartir esta emisora",
+  "shareApp": "Compartir RadioFlow",
+  "linkCopied": "Enlace copiado al portapapeles",
+  "close": "Cerrar",
+  "lockTuning": "Bloquear sintonía",
+  "equalizer": "Ecualizador",
+  "equalizerTagline": "Ajusta el sonido",
+  "equalizerDesc": "Crea tu propio sonido o elige un preajuste perfecto.",
+  "presets": "Preajustes",
+  "equalizerUnavailable": "El ecualizador solo está disponible en Android.",
+  "sleepTagline": "Apagado automático",
+  "sleepChooseDuration": "Elige duración",
+  "sleepRemaining": "{count} min restantes",
+  "@sleepRemaining": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "nearMe": "Emisoras cerca de mí",
+  "locationDenied": "Permiso de ubicación denegado",
+  "locationUnavailable": "No se pudo obtener tu ubicación",
+  "edit": "Editar",
+  "done": "Listo"
 }

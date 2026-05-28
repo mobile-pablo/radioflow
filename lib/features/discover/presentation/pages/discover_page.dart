@@ -16,6 +16,7 @@ import '../../bloc/station_cluster.dart';
 import '../widgets/cluster_sheet.dart';
 import '../widgets/filter_sheet.dart';
 import '../widgets/map3d_view.dart';
+import '../widgets/share_sheet.dart';
 import '../widgets/station_search_delegate.dart';
 
 class DiscoverPage extends StatelessWidget {
@@ -47,6 +48,7 @@ class _DiscoverViewState extends State<_DiscoverView>
     duration: const Duration(milliseconds: 900),
   );
   bool _showGlobe = false;
+  bool _locked = false;
   Station? _focusStation;
   Timer? _tuneDebounce;
   Station? _tuned;
@@ -86,11 +88,17 @@ class _DiscoverViewState extends State<_DiscoverView>
   }
 
   void _scheduleAutoTune(LatLng center, double zoom) {
+    if (_locked) return;
     _tuneDebounce?.cancel();
     _tuneDebounce = Timer(
       const Duration(milliseconds: 550),
       () => _autoTune(center, zoom),
     );
+  }
+
+  void _openShare() {
+    final station = context.read<PlayerBloc>().state.station;
+    ShareSheet.show(context, station);
   }
 
   void _autoTune(LatLng center, double zoom) {
@@ -176,8 +184,14 @@ class _DiscoverViewState extends State<_DiscoverView>
                     )
                   : _buildMap(context, state),
             ),
-            if (!_showGlobe && state.status == MapStatus.ready)
-              _Crosshair(tuned: _tuned),
+            if (!_showGlobe && state.status == MapStatus.ready) ...[
+              _Crosshair(tuned: _tuned, locked: _locked),
+              _RightActions(
+                locked: _locked,
+                onShare: _openShare,
+                onLock: () => setState(() => _locked = !_locked),
+              ),
+            ],
             if (state.status == MapStatus.loading)
               const ColoredBox(
                 color: AppColors.ink,
@@ -478,15 +492,54 @@ class _MapError extends StatelessWidget {
   }
 }
 
+class _RightActions extends StatelessWidget {
+  const _RightActions({
+    required this.locked,
+    required this.onShare,
+    required this.onLock,
+  });
+
+  final bool locked;
+  final VoidCallback onShare;
+  final VoidCallback onLock;
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: Align(
+        alignment: Alignment.centerRight,
+        child: Padding(
+          padding: const EdgeInsets.only(right: AppSpacing.md),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _GlassButton(icon: Icons.ios_share_rounded, onTap: onShare),
+              const SizedBox(height: AppSpacing.md),
+              _GlassButton(
+                icon: locked ? Icons.lock_rounded : Icons.lock_open_rounded,
+                active: locked,
+                onTap: onLock,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _Crosshair extends StatelessWidget {
-  const _Crosshair({required this.tuned});
+  const _Crosshair({required this.tuned, required this.locked});
 
   final Station? tuned;
+  final bool locked;
 
   @override
   Widget build(BuildContext context) {
     final active = tuned != null;
-    final color = active ? AppColors.accent : AppColors.textMuted;
+    final color = locked
+        ? AppColors.accentBlue
+        : (active ? AppColors.accent : AppColors.textMuted);
     return IgnorePointer(
       child: Align(
         alignment: const Alignment(0, -0.12),

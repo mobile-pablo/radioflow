@@ -84,5 +84,28 @@
     "placeholders": {
       "count": { "type": "int" }
     }
-  }
+  },
+  "shareStation": "Share this station",
+  "shareApp": "Share RadioFlow",
+  "linkCopied": "Link copied to clipboard",
+  "close": "Close",
+  "lockTuning": "Lock tuning",
+  "equalizer": "Equalizer",
+  "equalizerTagline": "Tune the sound",
+  "equalizerDesc": "Shape your own sound or pick a perfect preset.",
+  "presets": "Presets",
+  "equalizerUnavailable": "The equalizer is only available on Android.",
+  "sleepTagline": "Auto power-off",
+  "sleepChooseDuration": "Choose duration",
+  "sleepRemaining": "{count} min remaining",
+  "@sleepRemaining": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "nearMe": "Stations near me",
+  "locationDenied": "Location permission denied",
+  "locationUnavailable": "Couldn't get your location",
+  "edit": "Edit",
+  "done": "Done"
 }
