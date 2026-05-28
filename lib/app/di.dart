@@ -10,6 +10,7 @@ import '../features/player/audio/audio_controller.dart';
 import '../features/player/bloc/player_bloc.dart';
 import '../features/recents/recents_cubit.dart';
 import '../features/settings/bloc/settings_cubit.dart';
+import '../shared/stations_holder.dart';
 
 final GetIt getIt = GetIt.instance;
 
@@ -18,6 +19,7 @@ Future<void> configureDependencies() async {
 
   getIt
     ..registerSingleton<SharedPreferences>(prefs)
+    ..registerLazySingleton<StationsHolder>(StationsHolder.new)
     ..registerLazySingleton<RadioBrowserApi>(
       () => RadioBrowserApi(createRadioBrowserDio()),
     )

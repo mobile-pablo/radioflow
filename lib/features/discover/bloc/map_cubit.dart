@@ -5,14 +5,16 @@ import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:latlong2/latlong.dart';
 
+import '../../../shared/stations_holder.dart';
 import 'station_cluster.dart';
 
 part 'map_state.dart';
 
 class MapCubit extends Cubit<MapState> {
-  MapCubit(this._repository) : super(const MapState());
+  MapCubit(this._repository, this._holder) : super(const MapState());
 
   final StationRepository _repository;
+  final StationsHolder _holder;
   final math.Random _random = math.Random();
 
   static const double _initialZoom = 2.5;
@@ -34,6 +36,7 @@ class MapCubit extends Cubit<MapState> {
     emit(state.copyWith(status: MapStatus.loading));
     try {
       final stations = await _repository.getStationsWithGeo();
+      _holder.stations = stations;
       emit(
         state.copyWith(
           status: MapStatus.ready,

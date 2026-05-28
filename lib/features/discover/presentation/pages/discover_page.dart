@@ -8,11 +8,11 @@ import 'package:geolocator/geolocator.dart';
 import 'package:radioflow/l10n/app_localizations.dart';
 
 import '../../../../app/di.dart';
+import '../../../../shared/stations_holder.dart';
+import '../../../../shared/widgets/share_sheet.dart';
 import '../../../player/bloc/player_bloc.dart';
 import '../../bloc/map_cubit.dart';
-import '../../../../shared/widgets/share_sheet.dart';
 import '../widgets/map3d_view.dart';
-import '../widgets/station_list_sheet.dart';
 
 class DiscoverPage extends StatelessWidget {
   const DiscoverPage({super.key});
@@ -22,7 +22,8 @@ class DiscoverPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider<MapCubit>(
-      create: (_) => MapCubit(getIt<StationRepository>())..load(),
+      create: (_) =>
+          MapCubit(getIt<StationRepository>(), getIt<StationsHolder>())..load(),
       child: const _DiscoverView(),
     );
   }
@@ -159,7 +160,6 @@ class _DiscoverViewState extends State<_DiscoverView> {
                   onLock: () => _locked.value = !locked,
                 ),
               ),
-              const _CityBanner(),
             ],
             if (state.status == MapStatus.loading)
               const ColoredBox(
@@ -332,107 +332,6 @@ class _MapError extends StatelessWidget {
             FilledButton(onPressed: onRetry, child: const Text('Retry')),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _CityBanner extends StatelessWidget {
-  const _CityBanner();
-
-  String _localTime(Station station) {
-    final lon = station.geo?.longitude;
-    if (lon == null) return '';
-    final offset = (lon / 15).round();
-    final local = DateTime.now().toUtc().add(Duration(hours: offset));
-    final hh = local.hour.toString().padLeft(2, '0');
-    final mm = local.minute.toString().padLeft(2, '0');
-    return '$hh:$mm';
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-    return Positioned(
-      left: 0,
-      right: 0,
-      bottom: 0,
-      child: BlocBuilder<PlayerBloc, PlayerState>(
-        buildWhen: (a, b) => a.station != b.station,
-        builder: (context, player) {
-          final station = player.station;
-          if (station == null) return const SizedBox.shrink();
-          final place = (station.stateRegion?.isNotEmpty ?? false)
-              ? station.stateRegion!
-              : station.country;
-          final flag = station.countryCode.isEmpty
-              ? ''
-              : '${Country.flagEmoji(station.countryCode)} ';
-          final all = context.read<MapCubit>().state.stations;
-          final count = (station.stateRegion?.isNotEmpty ?? false)
-              ? all.where((s) => s.stateRegion == station.stateRegion).length
-              : all.where((s) => s.country == station.country).length;
-          return GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: () =>
-                StationListSheet.show(context, station: station, stations: all),
-            child: Container(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.xl,
-                AppSpacing.xxl,
-                AppSpacing.xl,
-                AppSpacing.lg,
-              ),
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [Colors.transparent, Color(0x8C000000)],
-                ),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    width: 44,
-                    height: 44,
-                    alignment: Alignment.center,
-                    decoration: const BoxDecoration(
-                      color: AppColors.cream,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Text(
-                      count > 0 ? '$count' : station.initials,
-                      style: textTheme.titleMedium?.copyWith(
-                        color: AppColors.ink,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: AppSpacing.md),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          place,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: textTheme.headlineSmall,
-                        ),
-                        if (station.country.isNotEmpty)
-                          Text(
-                            '$flag${station.country}',
-                            style: textTheme.bodySmall,
-                          ),
-                      ],
-                    ),
-                  ),
-                  Text(_localTime(station), style: textTheme.bodyMedium),
-                ],
-              ),
-            ),
-          );
-        },
       ),
     );
   }

@@ -7,6 +7,7 @@ import '../../features/connectivity/offline_banner.dart';
 import '../../features/player/bloc/player_bloc.dart';
 import '../../features/player/widgets/mini_player.dart';
 import '../../features/recents/recents_cubit.dart';
+import '../../shared/widgets/city_bar.dart';
 import 'floating_nav_bar.dart';
 
 class HomeShell extends StatelessWidget {
@@ -46,6 +47,7 @@ class HomeShell extends StatelessWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  const CityBar(),
                   const MiniPlayer(),
                   FloatingNavBar(navigationShell: navigationShell),
                 ],
