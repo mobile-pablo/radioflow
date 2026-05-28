@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:radioflow/l10n/app_localizations.dart';
 
+import '../../features/connectivity/offline_banner.dart';
 import '../../features/player/widgets/mini_player.dart';
 
 class HomeShell extends StatelessWidget {
@@ -20,7 +21,12 @@ class HomeShell extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     return Scaffold(
-      body: navigationShell,
+      body: Column(
+        children: [
+          const OfflineBanner(),
+          Expanded(child: navigationShell),
+        ],
+      ),
       bottomNavigationBar: Column(
         mainAxisSize: MainAxisSize.min,
         children: [

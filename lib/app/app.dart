@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:radioflow/l10n/app_localizations.dart';
 
+import '../features/connectivity/connectivity_cubit.dart';
 import '../features/favorites/bloc/favorites_cubit.dart';
 import '../features/player/bloc/player_bloc.dart';
 import 'di.dart';
@@ -17,6 +18,9 @@ class RadioFlowApp extends StatelessWidget {
       providers: [
         BlocProvider<PlayerBloc>.value(value: getIt<PlayerBloc>()),
         BlocProvider<FavoritesCubit>.value(value: getIt<FavoritesCubit>()),
+        BlocProvider<ConnectivityCubit>.value(
+          value: getIt<ConnectivityCubit>(),
+        ),
       ],
       child: MaterialApp.router(
         onGenerateTitle: (context) => AppLocalizations.of(context).appTitle,
