@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:math' as math;
+
 import 'package:core/core.dart';
 import 'package:domain/domain.dart';
 import 'package:flutter/material.dart';
@@ -45,9 +48,12 @@ class _DiscoverViewState extends State<_DiscoverView>
   );
   bool _showGlobe = false;
   Station? _focusStation;
+  Timer? _tuneDebounce;
+  Station? _tuned;
 
   @override
   void dispose() {
+    _tuneDebounce?.cancel();
     _flyController.dispose();
     super.dispose();
   }
@@ -77,6 +83,43 @@ class _DiscoverViewState extends State<_DiscoverView>
   void _onRandom() {
     final station = context.read<MapCubit>().randomStation();
     if (station != null) _focusOn(station);
+  }
+
+  void _scheduleAutoTune(LatLng center, double zoom) {
+    _tuneDebounce?.cancel();
+    _tuneDebounce = Timer(
+      const Duration(milliseconds: 550),
+      () => _autoTune(center, zoom),
+    );
+  }
+
+  void _autoTune(LatLng center, double zoom) {
+    if (!mounted) return;
+    final stations = context.read<MapCubit>().state.stations;
+    final threshold = 22 / math.pow(2, zoom);
+    Station? nearest;
+    double best = double.infinity;
+    for (final station in stations) {
+      final geo = station.geo;
+      if (geo == null) continue;
+      final dLat = geo.latitude - center.latitude;
+      final dLng = (geo.longitude - center.longitude) *
+          math.cos(center.latitude * math.pi / 180);
+      final dist = dLat * dLat + dLng * dLng;
+      if (dist < best) {
+        best = dist;
+        nearest = station;
+      }
+    }
+    if (nearest == null || best > threshold * threshold) {
+      if (_tuned != null) setState(() => _tuned = null);
+      return;
+    }
+    if (_tuned?.uuid != nearest.uuid) setState(() => _tuned = nearest);
+    final playing = context.read<PlayerBloc>().state.station;
+    if (playing?.uuid != nearest.uuid) {
+      context.read<PlayerBloc>().add(PlayStationRequested(nearest));
+    }
   }
 
   Future<void> _openSearch() async {
@@ -133,6 +176,8 @@ class _DiscoverViewState extends State<_DiscoverView>
                     )
                   : _buildMap(context, state),
             ),
+            if (!_showGlobe && state.status == MapStatus.ready)
+              _Crosshair(tuned: _tuned),
             if (state.status == MapStatus.loading)
               const ColoredBox(
                 color: AppColors.ink,
@@ -166,8 +211,10 @@ class _DiscoverViewState extends State<_DiscoverView>
         interactionOptions: const InteractionOptions(
           flags: InteractiveFlag.all & ~InteractiveFlag.rotate,
         ),
-        onPositionChanged: (camera, _) =>
-            context.read<MapCubit>().onZoomChanged(camera.zoom),
+        onPositionChanged: (camera, hasGesture) {
+          context.read<MapCubit>().onZoomChanged(camera.zoom);
+          if (hasGesture) _scheduleAutoTune(camera.center, camera.zoom);
+        },
       ),
       children: [
         TileLayer(
@@ -424,6 +471,68 @@ class _MapError extends StatelessWidget {
             const Icon(Icons.public_off_rounded, color: AppColors.textMuted),
             const SizedBox(height: AppSpacing.md),
             FilledButton(onPressed: onRetry, child: const Text('Retry')),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _Crosshair extends StatelessWidget {
+  const _Crosshair({required this.tuned});
+
+  final Station? tuned;
+
+  @override
+  Widget build(BuildContext context) {
+    final active = tuned != null;
+    final color = active ? AppColors.accent : AppColors.textMuted;
+    return IgnorePointer(
+      child: Align(
+        alignment: const Alignment(0, -0.12),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 92,
+              height: 92,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: color.withValues(alpha: active ? 0.1 : 0.04),
+                border: Border.all(color: color.withValues(alpha: 0.7), width: 2),
+              ),
+              child: Center(
+                child: Container(
+                  width: 8,
+                  height: 8,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: color,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            if (active)
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.md,
+                  vertical: AppSpacing.xs,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.ink.withValues(alpha: 0.7),
+                  borderRadius: BorderRadius.circular(AppSpacing.radiusPill),
+                  border: Border.all(color: AppColors.accent.withValues(alpha: 0.4)),
+                ),
+                child: Text(
+                  tuned!.name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: AppColors.accent,
+                  ),
+                ),
+              ),
           ],
         ),
       ),
