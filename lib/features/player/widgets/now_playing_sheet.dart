@@ -48,7 +48,12 @@ class NowPlayingSheet extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(l10n.nowPlaying, style: textTheme.labelSmall),
+                Text(
+                  station.country.isEmpty
+                      ? l10n.onAir.toUpperCase()
+                      : '${l10n.onAir.toUpperCase()} · ${station.country.toUpperCase()}',
+                  style: textTheme.labelSmall,
+                ),
                 const SizedBox(height: AppSpacing.lg),
                 _ArtCard(station: station, playing: state.isPlaying),
                 const SizedBox(height: AppSpacing.lg),
@@ -57,7 +62,9 @@ class NowPlayingSheet extends StatelessWidget {
                   textAlign: TextAlign.center,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: textTheme.headlineSmall,
+                  style: textTheme.headlineSmall?.copyWith(
+                    color: AppColors.accent,
+                  ),
                 ),
                 if (state.track != null) ...[
                   const SizedBox(height: AppSpacing.xs),
