@@ -13,8 +13,24 @@ class Map3dView extends StatelessWidget {
   final List<domain.Station> stations;
   final void Function(domain.Station station) onStationTap;
 
-  static const String _style =
-      'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json';
+  static const String _style = '''
+{
+  "version": 8,
+  "sources": {
+    "satellite": {
+      "type": "raster",
+      "tiles": ["https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"],
+      "tileSize": 256,
+      "maxzoom": 19,
+      "attribution": "Esri, Maxar, Earthstar Geographics"
+    }
+  },
+  "layers": [
+    {"id": "background", "type": "background", "paint": {"background-color": "#000000"}},
+    {"id": "satellite", "type": "raster", "source": "satellite"}
+  ]
+}
+''';
 
   List<domain.Station> get _geoStations =>
       stations.where((s) => s.geo != null).toList();
