@@ -104,6 +104,27 @@ abstract final class AppTheme {
         iconColor: AppColors.textSecondary,
         textColor: AppColors.textPrimary,
       ),
+      navigationBarTheme: NavigationBarThemeData(
+        backgroundColor: AppColors.surface,
+        surfaceTintColor: Colors.transparent,
+        indicatorColor: AppColors.accent.withValues(alpha: 0.16),
+        elevation: 0,
+        labelTextStyle: WidgetStateProperty.resolveWith(
+          (states) => textTheme.labelSmall!.copyWith(
+            letterSpacing: 0.3,
+            color: states.contains(WidgetState.selected)
+                ? AppColors.accent
+                : AppColors.textMuted,
+          ),
+        ),
+        iconTheme: WidgetStateProperty.resolveWith(
+          (states) => IconThemeData(
+            color: states.contains(WidgetState.selected)
+                ? AppColors.accent
+                : AppColors.textMuted,
+          ),
+        ),
+      ),
     );
   }
 }
