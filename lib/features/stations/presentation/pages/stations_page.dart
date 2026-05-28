@@ -4,6 +4,7 @@ import 'package:core/core.dart';
 import 'package:domain/domain.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:radioflow/l10n/app_localizations.dart';
 
 import '../../../../app/di.dart';
 import '../../../../shared/widgets/station_tile.dart';
@@ -54,9 +55,10 @@ class _StationsViewState extends State<_StationsView> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Stations'),
+        title: Text(l10n.navStations),
         actions: [
           BlocBuilder<StationsBloc, StationsState>(
             buildWhen: (a, b) => a.sort != b.sort,
@@ -65,16 +67,19 @@ class _StationsViewState extends State<_StationsView> {
               initialValue: state.sort,
               onSelected: (sort) =>
                   context.read<StationsBloc>().add(StationsSortChanged(sort)),
-              itemBuilder: (_) => const [
+              itemBuilder: (_) => [
                 PopupMenuItem(
                   value: StationSort.popularity,
-                  child: Text('Most popular'),
+                  child: Text(l10n.sortPopular),
                 ),
                 PopupMenuItem(
                   value: StationSort.votes,
-                  child: Text('Top voted'),
+                  child: Text(l10n.sortVotes),
                 ),
-                PopupMenuItem(value: StationSort.name, child: Text('A–Z')),
+                PopupMenuItem(
+                  value: StationSort.name,
+                  child: Text(l10n.sortName),
+                ),
               ],
             ),
           ),
@@ -93,9 +98,9 @@ class _StationsViewState extends State<_StationsView> {
               controller: _controller,
               onChanged: _onQueryChanged,
               textInputAction: TextInputAction.search,
-              decoration: const InputDecoration(
-                hintText: 'Search stations, genres',
-                prefixIcon: Icon(Icons.search_rounded),
+              decoration: InputDecoration(
+                hintText: l10n.searchHint,
+                prefixIcon: const Icon(Icons.search_rounded),
               ),
             ),
           ),
@@ -119,7 +124,6 @@ class _StationsList extends StatelessWidget {
             return const _LoadingList();
           case StationsStatus.failure:
             return _ErrorView(
-              message: state.errorMessage ?? 'Something went wrong.',
               onRetry: () =>
                   context.read<StationsBloc>().add(const StationsRequested()),
             );
@@ -212,7 +216,7 @@ class _EmptyView extends StatelessWidget {
   Widget build(BuildContext context) {
     return Center(
       child: Text(
-        'No stations found.',
+        AppLocalizations.of(context).stationsEmpty,
         style: Theme.of(context).textTheme.bodyMedium,
       ),
     );
@@ -220,20 +224,23 @@ class _EmptyView extends StatelessWidget {
 }
 
 class _ErrorView extends StatelessWidget {
-  const _ErrorView({required this.message, required this.onRetry});
+  const _ErrorView({required this.onRetry});
 
-  final String message;
   final VoidCallback onRetry;
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(message, style: Theme.of(context).textTheme.bodyMedium),
+          Text(
+            l10n.stationsError,
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
           const SizedBox(height: AppSpacing.md),
-          FilledButton(onPressed: onRetry, child: const Text('Retry')),
+          FilledButton(onPressed: onRetry, child: Text(l10n.retry)),
         ],
       ),
     );

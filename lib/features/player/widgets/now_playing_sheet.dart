@@ -2,6 +2,7 @@ import 'package:core/core.dart';
 import 'package:domain/domain.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:radioflow/l10n/app_localizations.dart';
 
 import '../../../shared/widgets/station_artwork.dart';
 import '../../favorites/widgets/favorite_button.dart';
@@ -25,6 +26,7 @@ class NowPlayingSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
+    final l10n = AppLocalizations.of(context);
     return BlocBuilder<PlayerBloc, PlayerState>(
       builder: (context, state) {
         final station = state.station;
@@ -45,7 +47,7 @@ class NowPlayingSheet extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text('NOW PLAYING', style: textTheme.labelSmall),
+                Text(l10n.nowPlaying, style: textTheme.labelSmall),
                 const SizedBox(height: AppSpacing.lg),
                 _ArtCard(station: station, playing: state.isPlaying),
                 const SizedBox(height: AppSpacing.lg),
@@ -78,7 +80,7 @@ class NowPlayingSheet extends StatelessWidget {
                 if (state.status == PlaybackStatus.error) ...[
                   const SizedBox(height: AppSpacing.lg),
                   Text(
-                    state.errorMessage ?? 'Station unavailable.',
+                    l10n.stationUnavailable,
                     style: textTheme.bodySmall?.copyWith(
                       color: AppColors.danger,
                     ),

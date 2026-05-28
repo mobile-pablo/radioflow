@@ -2,6 +2,7 @@ import 'package:core/core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:radioflow/l10n/app_localizations.dart';
 
 import '../../../../shared/widgets/station_tile.dart';
 import '../../../discover/presentation/pages/discover_page.dart';
@@ -16,7 +17,7 @@ class FavoritesPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Favorites')),
+      appBar: AppBar(title: Text(AppLocalizations.of(context).navFavorites)),
       body: BlocBuilder<FavoritesCubit, FavoritesState>(
         builder: (context, state) {
           if (state.status != FavoritesStatus.loaded) {
@@ -81,6 +82,7 @@ class _EmptyFavorites extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
+    final l10n = AppLocalizations.of(context);
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.xl),
@@ -90,20 +92,20 @@ class _EmptyFavorites extends StatelessWidget {
             const RfLogo(size: 64, glow: false),
             const SizedBox(height: AppSpacing.lg),
             Text(
-              'No favorites yet',
+              l10n.favoritesEmptyTitle,
               style: textTheme.titleLarge,
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: AppSpacing.sm),
             Text(
-              'Tap the heart on any station to keep it here.',
+              l10n.favoritesEmptyBody,
               style: textTheme.bodyMedium,
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: AppSpacing.lg),
             FilledButton(
               onPressed: () => context.go(DiscoverPage.path),
-              child: const Text('Discover stations'),
+              child: Text(l10n.discoverStations),
             ),
           ],
         ),

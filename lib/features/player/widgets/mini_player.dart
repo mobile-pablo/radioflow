@@ -1,6 +1,7 @@
 import 'package:core/core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:radioflow/l10n/app_localizations.dart';
 
 import '../../../shared/widgets/station_artwork.dart';
 import '../../favorites/widgets/favorite_button.dart';
@@ -53,9 +54,9 @@ class MiniPlayer extends StatelessWidget {
                           ),
                           Text(
                             state.isBuffering
-                                ? 'Buffering…'
+                                ? AppLocalizations.of(context).buffering
                                 : (station.country.isEmpty
-                                      ? 'On air'
+                                      ? AppLocalizations.of(context).onAir
                                       : station.country),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,

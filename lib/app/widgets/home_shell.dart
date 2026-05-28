@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:radioflow/l10n/app_localizations.dart';
 
 import '../../features/player/widgets/mini_player.dart';
 
@@ -17,6 +18,7 @@ class HomeShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
       body: navigationShell,
       bottomNavigationBar: Column(
@@ -26,21 +28,21 @@ class HomeShell extends StatelessWidget {
           NavigationBar(
             selectedIndex: navigationShell.currentIndex,
             onDestinationSelected: _onDestinationSelected,
-            destinations: const [
+            destinations: [
               NavigationDestination(
-                icon: Icon(Icons.public_outlined),
-                selectedIcon: Icon(Icons.public),
-                label: 'Discover',
+                icon: const Icon(Icons.public_outlined),
+                selectedIcon: const Icon(Icons.public),
+                label: l10n.navDiscover,
               ),
               NavigationDestination(
-                icon: Icon(Icons.radio_outlined),
-                selectedIcon: Icon(Icons.radio),
-                label: 'Stations',
+                icon: const Icon(Icons.radio_outlined),
+                selectedIcon: const Icon(Icons.radio),
+                label: l10n.navStations,
               ),
               NavigationDestination(
-                icon: Icon(Icons.favorite_outline),
-                selectedIcon: Icon(Icons.favorite),
-                label: 'Favorites',
+                icon: const Icon(Icons.favorite_outline),
+                selectedIcon: const Icon(Icons.favorite),
+                label: l10n.navFavorites,
               ),
             ],
           ),

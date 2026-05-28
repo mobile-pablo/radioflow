@@ -41,6 +41,9 @@ migrate_working_dir/
 *.g.dart
 *.auto_mappr.dart
 
+# Generated localizations (flutter gen-l10n)
+/lib/l10n/app_localizations*.dart
+
 # Symbolication related
 app.*.symbols
 
