@@ -77,38 +77,33 @@ class _DiscoverViewState extends State<_DiscoverView> {
             if (state.status == MapStatus.failure)
               _MapError(onRetry: () => context.read<MapCubit>().load()),
             SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.all(AppSpacing.md),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    _RoundButton(
-                      icon: Icons.settings_outlined,
-                      tooltip: l10n.settings,
-                      onTap: () => context.push(SettingsPage.path),
-                    ),
-                    _RoundButton(
-                      icon: _showGlobe
-                          ? Icons.map_rounded
-                          : Icons.public_rounded,
-                      tooltip: _showGlobe ? l10n.mapView : l10n.globeView,
-                      onTap: () => setState(() => _showGlobe = !_showGlobe),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            SafeArea(
               child: Align(
-                alignment: Alignment.bottomRight,
+                alignment: Alignment.topLeft,
                 child: Padding(
-                  padding: const EdgeInsets.all(AppSpacing.lg),
-                  child: FloatingActionButton(
-                    onPressed: _onRandom,
-                    backgroundColor: AppColors.accent,
-                    foregroundColor: AppColors.ink,
-                    tooltip: l10n.surprise,
-                    child: const Icon(Icons.casino_rounded),
+                  padding: const EdgeInsets.all(AppSpacing.md),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _RoundButton(
+                        icon: Icons.settings_outlined,
+                        tooltip: l10n.settings,
+                        onTap: () => context.push(SettingsPage.path),
+                      ),
+                      const SizedBox(height: AppSpacing.sm),
+                      _RoundButton(
+                        icon: _showGlobe
+                            ? Icons.map_rounded
+                            : Icons.public_rounded,
+                        tooltip: _showGlobe ? l10n.mapView : l10n.globeView,
+                        onTap: () => setState(() => _showGlobe = !_showGlobe),
+                      ),
+                      const SizedBox(height: AppSpacing.sm),
+                      _RoundButton(
+                        icon: Icons.casino_rounded,
+                        tooltip: l10n.surprise,
+                        onTap: _onRandom,
+                      ),
+                    ],
                   ),
                 ),
               ),
