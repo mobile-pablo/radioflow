@@ -66,7 +66,7 @@ dependencies:
   connectivity_plus: ^7.1.1
   flutter_map: ^8.3.0
   latlong2: ^0.9.1
-  flutter_earth_globe: ^2.2.1
+  mapbox_maps_flutter: ^2.24.0
 
 dev_dependencies:
   flutter_test:
@@ -103,9 +103,6 @@ flutter:
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
-
-  assets:
-    - assets/textures/
 
   # To add assets to your application, add an assets section, like this:
   # assets:

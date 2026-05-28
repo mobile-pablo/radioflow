@@ -52,6 +52,23 @@ repositories from `domain` — the data layer is swappable without touching the 
 - Flutter 3.27 or newer (developed on 3.38.5, Dart 3.10)
 - Xcode (for iOS) and/or Android Studio + SDK (for Android)
 
+### Mapbox token (for the 3D globe)
+
+The 3D globe view uses the Mapbox Maps SDK, which needs two tokens (free
+account at account.mapbox.com):
+
+1. A **public** token (`pk.…`) for the app. Put it in `env.json` at the repo
+   root (gitignored):
+   ```json
+   { "MAPBOX_TOKEN": "pk.your-public-token" }
+   ```
+2. A **secret download** token (`sk.…` with the `DOWNLOADS:READ` scope) so the
+   build can fetch the native SDK:
+   ```bash
+   echo "MAPBOX_DOWNLOADS_TOKEN=sk.your-download-token" >> ~/.gradle/gradle.properties
+   # iOS also needs it in ~/.netrc (machine api.mapbox.com / login mapbox / password sk.…)
+   ```
+
 ### Install and run
 
 ```bash
@@ -60,15 +77,15 @@ flutter pub get
 # Generate freezed / json_serializable / retrofit / auto_mappr code
 dart run melos run gen
 
-# Android
-flutter run
+# Run (pass the public Mapbox token from env.json)
+flutter run --dart-define-from-file=env.json
 
-# iOS
+# iOS first time
 cd ios && pod install && cd ..
-flutter run
+flutter run --dart-define-from-file=env.json
 ```
 
-No API key is needed — Radio Browser is open and free.
+Radio Browser needs no key; only the Mapbox globe requires the tokens above.
 
 ## Tests
 

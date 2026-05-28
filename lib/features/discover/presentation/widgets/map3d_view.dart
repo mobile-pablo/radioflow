@@ -1,11 +1,6 @@
-import 'dart:math' as math;
-
 import 'package:core/core.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_earth_globe/flutter_earth_globe.dart';
-import 'package:flutter_earth_globe/flutter_earth_globe_controller.dart';
-import 'package:flutter_earth_globe/globe_coordinates.dart';
-import 'package:flutter_earth_globe/point.dart' as globe;
+import 'package:flutter/widgets.dart';
+import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 
 import '../../bloc/station_cluster.dart';
 
@@ -24,70 +19,69 @@ class Map3dView extends StatefulWidget {
 }
 
 class _Map3dViewState extends State<Map3dView> {
-  late final FlutterEarthGlobeController _controller =
-      FlutterEarthGlobeController(
-        surface: const AssetImage('assets/textures/earth.jpg'),
-        isRotating: true,
-        rotationSpeed: 0.05,
-        zoom: 1,
-        minZoom: 0.1,
-        maxZoom: 30,
-        zoomSensitivity: 1.2,
-        isBackgroundFollowingSphereRotation: true,
-      );
-
-  final Set<String> _pointIds = {};
-
-  @override
-  void initState() {
-    super.initState();
-    _populate();
-  }
+  CircleAnnotationManager? _manager;
+  final Map<String, StationCluster> _byAnnotation = {};
 
   @override
   void didUpdateWidget(Map3dView oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (!identical(oldWidget.clusters, widget.clusters)) _populate();
+    if (!identical(oldWidget.clusters, widget.clusters)) _syncAnnotations();
   }
 
-  void _populate() {
-    for (final id in _pointIds) {
-      _controller.removePoint(id);
-    }
-    _pointIds.clear();
-    for (final cluster in widget.clusters) {
-      final id = cluster.primary.uuid;
-      _pointIds.add(id);
-      _controller.addPoint(
-        globe.Point(
-          id: id,
-          coordinates: GlobeCoordinates(
-            cluster.center.latitude,
-            cluster.center.longitude,
+  Future<void> _onMapCreated(MapboxMap map) async {
+    await map.style.setProjection(
+      StyleProjection(name: StyleProjectionName.globe),
+    );
+    final manager = await map.annotations.createCircleAnnotationManager();
+    manager.tapEvents(
+      onTap: (annotation) {
+        final cluster = _byAnnotation[annotation.id];
+        if (cluster != null) widget.onTapCluster(cluster);
+      },
+    );
+    _manager = manager;
+    await _syncAnnotations();
+  }
+
+  Future<void> _syncAnnotations() async {
+    final manager = _manager;
+    if (manager == null) return;
+    await manager.deleteAll();
+    _byAnnotation.clear();
+    final options = [
+      for (final cluster in widget.clusters)
+        CircleAnnotationOptions(
+          geometry: Point(
+            coordinates: Position(
+              cluster.center.longitude,
+              cluster.center.latitude,
+            ),
           ),
-          style: globe.PointStyle(
-            color: AppColors.accent,
-            size: cluster.isSingle
-                ? 4
-                : (4 + math.log(cluster.count + 1) * 1.6).clamp(4, 13),
-          ),
-          onTap: () => widget.onTapCluster(cluster),
+          circleColor: AppColors.accent.toARGB32(),
+          circleRadius: cluster.isSingle ? 5 : cluster.markerDiameter * 0.5,
+          circleStrokeColor: AppColors.ink.toARGB32(),
+          circleStrokeWidth: 1,
         ),
-      );
+    ];
+    final created = await manager.createMulti(options);
+    for (var i = 0; i < created.length; i++) {
+      final annotation = created[i];
+      if (annotation != null) {
+        _byAnnotation[annotation.id] = widget.clusters[i];
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return ColoredBox(
-      color: AppColors.ink,
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final radius =
-              math.min(constraints.maxWidth, constraints.maxHeight) * 0.42;
-          return FlutterEarthGlobe(controller: _controller, radius: radius);
-        },
+    return MapWidget(
+      key: const ValueKey('discoverGlobe'),
+      styleUri: MapboxStyles.SATELLITE_STREETS,
+      viewport: CameraViewportState(
+        center: Point(coordinates: Position(0, 20)),
+        zoom: 1.5,
       ),
+      onMapCreated: _onMapCreated,
     );
   }
 }
