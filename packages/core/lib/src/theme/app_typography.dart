@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-/// Typography. Space Grotesk for display/brand, Inter for UI/body.
-///
-/// Scale (px): 28 / 22 / 18 / 16 / 14 / 12. Headings use weight 600; body 400–500.
 abstract final class AppTypography {
   const AppTypography._();
 
@@ -55,7 +52,6 @@ abstract final class AppTypography {
         fontWeight: FontWeight.w600,
         color: color,
       ),
-      // Used for the "NOW EXPLORING" / "STATION HOMEPAGE" overline labels.
       labelSmall: body.copyWith(
         fontSize: 11,
         fontWeight: FontWeight.w600,

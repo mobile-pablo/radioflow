@@ -2,9 +2,6 @@ import 'package:flutter/widgets.dart';
 
 import '../theme/app_colors.dart';
 
-/// The RadioFlow signature mark: a glossy creamy-white sound wave (tilde) with a
-/// glowing mint "on air" dot at its tip. Painted from the brand vector so it
-/// stays crisp at any size.
 class RfLogo extends StatelessWidget {
   const RfLogo({super.key, this.size = 64, this.glow = true});
 
@@ -25,7 +22,6 @@ class _RfLogoPainter extends CustomPainter {
 
   final bool glow;
 
-  /// Authoring coordinate space — matches the brand SVG viewBox (200×200).
   static const double _viewBox = 200;
   static const Offset _tip = Offset(165, 80);
 
@@ -43,7 +39,6 @@ class _RfLogoPainter extends CustomPainter {
       ..cubicTo(60, 102, 46, 102, 38, 122)
       ..close();
 
-    // Soft drop shadow under the wave.
     canvas.drawPath(
       wave.shift(const Offset(0, 3)),
       Paint()
@@ -51,7 +46,6 @@ class _RfLogoPainter extends CustomPainter {
         ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3),
     );
 
-    // Creamy gradient body.
     canvas.drawPath(
       wave,
       Paint()
@@ -63,7 +57,6 @@ class _RfLogoPainter extends CustomPainter {
         ).createShader(wave.getBounds()),
     );
 
-    // Glossy highlight stroke along the crest.
     canvas.drawPath(
       Path()
         ..moveTo(42, 102)
@@ -75,7 +68,6 @@ class _RfLogoPainter extends CustomPainter {
         ..color = const Color(0x99FFFFFF),
     );
 
-    // Mint "on air" glow + dot at the wave tip.
     if (glow) {
       canvas.drawCircle(
         _tip,

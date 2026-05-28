@@ -4,8 +4,6 @@ import 'app_colors.dart';
 import 'app_spacing.dart';
 import 'app_typography.dart';
 
-/// RadioFlow theme. Dark only by design — the brand is pure-black with one mint
-/// accent, so there is no light variant.
 abstract final class AppTheme {
   const AppTheme._();
 

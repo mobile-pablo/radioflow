@@ -4,8 +4,6 @@ import 'package:flutter/widgets.dart';
 
 import '../theme/app_colors.dart';
 
-/// Animated equalizer bars shown while a station is playing. When [playing] is
-/// false the bars settle to a low idle level instead of animating.
 class RfEqualizer extends StatefulWidget {
   const RfEqualizer({
     super.key,
