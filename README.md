@@ -1,103 +1,88 @@
 # RadioFlow
 
-Listen to radio stations from around the world. Browse and search thousands of
-stations, tap to play, control playback, and keep your favorites one tap away.
+**RadioFlow** is a mobile app that lets you listen to radio stations from around the world. You can browse through thousands of stations, search for your favorites, tap to play instantly, and save stations you love for quick access later.
 
-Built with Flutter for **iOS and Android**. Station data comes from the free
-[Radio Browser API](https://www.radio-browser.info/) (no API key required).
+The app works on both iPhones (iOS) and Android phones. The station information comes from a free public database that anyone can access—no special account or key required.
 
-## Features
+## What You Can Do
 
-- Browse all stations with search and sorting (popularity, votes, A–Z)
-- Tap any station to start streaming instantly
-- Playback controls: play/pause and volume (slider + steps)
-- Persistent mini-player and an expandable Now Playing view with station metadata
-- Background playback with lock-screen / notification controls
-- Mark favorites and access them any time (stored on device)
-- Loading, empty, error-with-retry and offline states throughout
-- English and Spanish localization
+- **Browse and search** thousands of radio stations from around the world
+- **Sort stations** by popularity, number of votes, or alphabetically
+- **Play any station** instantly by tapping it
+- **Control playback** with play/pause buttons and a volume slider
+- **See what's playing** with a player bar that shows the station name and details
+- **Play in the background** while using other apps; control playback from your lock screen or notifications
+- **Save favorites** so you can find them instantly next time
+- **Use offline mode** and see helpful error messages if something goes wrong
+- **Use the app in English or Spanish**
 
-## Tech stack
+## How It's Built
 
-- **Flutter** with a **melos** monorepo (Dart pub workspaces)
-- **flutter_bloc** for state management
-- **get_it** for dependency injection
-- **dio + retrofit** for networking, with a logging interceptor and mirror failover
-- **auto_mappr** for DTO → entity mapping
-- **freezed** for immutable entities
-- **just_audio** (+ `just_audio_background`) for streaming
-- **shared_preferences** for favorites and settings
-- **go_router** for navigation
+RadioFlow is built using **Flutter**, a framework that lets developers write one set of code that works on both iPhones and Android phones (rather than writing separate code for each).
 
-## Architecture
+The code is organized into three main parts:
+- **Visual design** (colors, buttons, layouts, themes)
+- **Core logic** (how the app gets and stores station information)
+- **Data handling** (connecting to the online database and fetching station lists)
 
-Feature-first presentation on top of layered packages:
+This organization makes it easy to change how the app looks or works without breaking anything else.
 
-```
-radioflow/                 # the Flutter app (features, UI, DI, routing)
-  packages/
-    core/                  # design system, shared widgets, theme
-    domain/                # entities + repository contracts (pure Dart)
-    data/                  # Radio Browser client, DTOs, mappers, repositories
-```
+## Getting Started
 
-The app depends on `core`, `domain`, and `data`. `data` implements the
-contracts defined in `domain`. UI talks to BLoCs/Cubits, which talk to
-repositories from `domain` — the data layer is swappable without touching the UI.
+### What You Need
 
-## Getting started
+- Flutter 3.27 or newer (a tool for building mobile apps)
+- Xcode (for iPhone) and/or Android Studio (for Android)
 
-### Prerequisites
+### Setting Up the Mapbox 3D Globe
 
-- Flutter 3.27 or newer (developed on 3.38.5, Dart 3.10)
-- Xcode (for iOS) and/or Android Studio + SDK (for Android)
+The app includes a 3D globe map view. To use this feature, you need tokens (free accounts) from Mapbox:
 
-### Mapbox token (for the 3D globe)
-
-The 3D globe view uses the Mapbox Maps SDK, which needs two tokens (free
-account at account.mapbox.com):
-
-1. A **public** token (`pk.…`) for the app. Put it in `env.json` at the repo
-   root (gitignored):
+1. Create a free account at [account.mapbox.com](https://account.mapbox.com)
+2. Get your **public token** (starts with `pk.`) and create a file called `env.json` in the main folder with:
    ```json
    { "MAPBOX_TOKEN": "pk.your-public-token" }
    ```
-2. A **secret download** token (`sk.…` with the `DOWNLOADS:READ` scope) so the
-   build can fetch the native SDK:
-   ```bash
-   echo "MAPBOX_DOWNLOADS_TOKEN=sk.your-download-token" >> ~/.gradle/gradle.properties
-   # iOS also needs it in ~/.netrc (machine api.mapbox.com / login mapbox / password sk.…)
-   ```
+3. Get your **secret download token** (starts with `sk.` and has downloads permission):
+   - For Android: add it to `~/.gradle/gradle.properties`
+   - For iPhone: add it to `~/.netrc`
 
-### Install and run
+The regular radio station browsing works without any tokens—only the globe feature needs this setup.
+
+### Running the App
 
 ```bash
+# Install dependencies
 flutter pub get
 
-# Generate freezed / json_serializable / retrofit / auto_mappr code
+# Generate code files
 dart run melos run gen
 
-# Run (pass the public Mapbox token from env.json)
+# Run the app
 flutter run --dart-define-from-file=env.json
 
-# iOS first time
+# For iPhone (first time only)
 cd ios && pod install && cd ..
 flutter run --dart-define-from-file=env.json
 ```
 
-Radio Browser needs no key; only the Mapbox globe requires the tokens above.
-
-## Tests
+## Testing
 
 ```bash
-flutter test                       # app BLoC/cubit tests
-cd packages/data && flutter test   # DTO → entity mapping test
+# Run app tests
+flutter test
+
+# Run data handling tests
+cd packages/data && flutter test
 ```
 
-## Platform to compile
+## Available Platforms
 
-iOS and Android. Android is the primary target used for the demo recording.
+- **iPhone** (iOS)
+- **Android**
 
-## Attributions
+(Android was used for the demo video)
+
+## Credits
 
 - Station data: [Radio Browser](https://www.radio-browser.info/)
