@@ -2,19 +2,18 @@ import 'package:core/core.dart';
 import 'package:domain/domain.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_earth_globe/flutter_earth_globe.dart';
-import 'package:flutter_earth_globe/flutter_earth_globe_controller.dart';
-import 'package:flutter_earth_globe/globe_coordinates.dart';
-import 'package:flutter_earth_globe/point.dart';
-import 'package:flutter_earth_globe/sphere_style.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:radioflow/l10n/app_localizations.dart';
 
 import '../../../../app/di.dart';
 import '../../../player/bloc/player_bloc.dart';
+import '../../../settings/presentation/pages/settings_page.dart';
 import '../../bloc/map_cubit.dart';
 import '../../bloc/station_cluster.dart';
 import '../widgets/cluster_sheet.dart';
+import '../widgets/rotating_globe.dart';
 
 class DiscoverPage extends StatelessWidget {
   const DiscoverPage({super.key});
@@ -39,43 +38,6 @@ class _DiscoverView extends StatefulWidget {
 
 class _DiscoverViewState extends State<_DiscoverView> {
   bool _showGlobe = false;
-  bool _globePopulated = false;
-
-  late final FlutterEarthGlobeController _globe = FlutterEarthGlobeController(
-    isRotating: true,
-    rotationSpeed: 0.05,
-    showAtmosphere: true,
-    atmosphereColor: AppColors.accent,
-    atmosphereThickness: 0.04,
-    atmosphereOpacity: 0.25,
-    sphereStyle: const SphereStyle(
-      shadowColor: AppColors.accent,
-      shadowBlurSigma: 24,
-      gradientOverlay: RadialGradient(
-        center: Alignment(-0.3, -0.3),
-        colors: [AppColors.surfaceHi, AppColors.ink],
-        stops: [0, 1],
-      ),
-    ),
-  );
-
-  void _populateGlobe(List<Station> stations) {
-    if (_globePopulated) return;
-    _globePopulated = true;
-    final playerBloc = context.read<PlayerBloc>();
-    for (final station in stations.take(250)) {
-      final geo = station.geo;
-      if (geo == null) continue;
-      _globe.addPoint(
-        Point(
-          id: station.uuid,
-          coordinates: GlobeCoordinates(geo.latitude, geo.longitude),
-          style: const PointStyle(color: AppColors.accent, size: 4),
-          onTap: () => playerBloc.add(PlayStationRequested(station)),
-        ),
-      );
-    }
-  }
 
   void _onClusterTap(StationCluster cluster) {
     if (cluster.isSingle) {
@@ -85,17 +47,27 @@ class _DiscoverViewState extends State<_DiscoverView> {
     }
   }
 
+  void _onRandom() {
+    final station = context.read<MapCubit>().randomStation();
+    if (station != null) {
+      context.read<PlayerBloc>().add(PlayStationRequested(station));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return BlocConsumer<MapCubit, MapState>(
-      listener: (context, state) {
-        if (state.status == MapStatus.ready) _populateGlobe(state.stations);
-      },
+    final l10n = AppLocalizations.of(context);
+    return BlocBuilder<MapCubit, MapState>(
       builder: (context, state) {
         return Stack(
           children: [
             Positioned.fill(
-              child: _showGlobe ? _buildGlobe() : _buildMap(context, state),
+              child: _showGlobe
+                  ? RotatingGlobe(
+                      clusters: state.globeClusters,
+                      onTapCluster: _onClusterTap,
+                    )
+                  : _buildMap(context, state),
             ),
             if (state.status == MapStatus.loading)
               const ColoredBox(
@@ -105,13 +77,38 @@ class _DiscoverViewState extends State<_DiscoverView> {
             if (state.status == MapStatus.failure)
               _MapError(onRetry: () => context.read<MapCubit>().load()),
             SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.all(AppSpacing.md),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    _RoundButton(
+                      icon: Icons.settings_outlined,
+                      tooltip: l10n.settings,
+                      onTap: () => context.push(SettingsPage.path),
+                    ),
+                    _RoundButton(
+                      icon: _showGlobe
+                          ? Icons.map_rounded
+                          : Icons.public_rounded,
+                      tooltip: _showGlobe ? l10n.mapView : l10n.globeView,
+                      onTap: () => setState(() => _showGlobe = !_showGlobe),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            SafeArea(
               child: Align(
-                alignment: Alignment.topRight,
+                alignment: Alignment.bottomRight,
                 child: Padding(
-                  padding: const EdgeInsets.all(AppSpacing.md),
-                  child: _ViewToggle(
-                    showGlobe: _showGlobe,
-                    onToggle: () => setState(() => _showGlobe = !_showGlobe),
+                  padding: const EdgeInsets.all(AppSpacing.lg),
+                  child: FloatingActionButton(
+                    onPressed: _onRandom,
+                    backgroundColor: AppColors.accent,
+                    foregroundColor: AppColors.ink,
+                    tooltip: l10n.surprise,
+                    child: const Icon(Icons.casino_rounded),
                   ),
                 ),
               ),
@@ -119,13 +116,6 @@ class _DiscoverViewState extends State<_DiscoverView> {
           ],
         );
       },
-    );
-  }
-
-  Widget _buildGlobe() {
-    return ColoredBox(
-      color: AppColors.ink,
-      child: Center(child: FlutterEarthGlobe(controller: _globe, radius: 150)),
     );
   }
 
@@ -156,7 +146,7 @@ class _DiscoverViewState extends State<_DiscoverView> {
                 point: cluster.center,
                 width: 46,
                 height: 46,
-                child: _ClusterMarker(
+                child: _MapDot(
                   cluster: cluster,
                   onTap: () => _onClusterTap(cluster),
                 ),
@@ -174,48 +164,27 @@ class _DiscoverViewState extends State<_DiscoverView> {
   }
 }
 
-class _ViewToggle extends StatelessWidget {
-  const _ViewToggle({required this.showGlobe, required this.onToggle});
-
-  final bool showGlobe;
-  final VoidCallback onToggle;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: AppColors.surface.withValues(alpha: 0.85),
-      shape: const CircleBorder(side: BorderSide(color: AppColors.line)),
-      child: IconButton(
-        onPressed: onToggle,
-        icon: Icon(showGlobe ? Icons.map_rounded : Icons.public_rounded),
-        tooltip: showGlobe ? 'Map view' : 'Globe view',
-      ),
-    );
-  }
-}
-
-class _ClusterMarker extends StatelessWidget {
-  const _ClusterMarker({required this.cluster, required this.onTap});
+class _MapDot extends StatelessWidget {
+  const _MapDot({required this.cluster, required this.onTap});
 
   final StationCluster cluster;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final isSingle = cluster.isSingle;
+    final size = cluster.markerDiameter;
     return GestureDetector(
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
       child: Center(
         child: Container(
-          width: isSingle ? 16 : 30,
-          height: isSingle ? 16 : 30,
-          alignment: Alignment.center,
+          width: size,
+          height: size,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: isSingle
+            color: cluster.isSingle
                 ? AppColors.accent
-                : AppColors.accent.withValues(alpha: 0.22),
+                : AppColors.accent.withValues(alpha: 0.3),
             border: Border.all(color: AppColors.accent, width: 1.5),
             boxShadow: [
               BoxShadow(
@@ -225,18 +194,29 @@ class _ClusterMarker extends StatelessWidget {
               ),
             ],
           ),
-          child: isSingle
-              ? null
-              : Text(
-                  '${cluster.count}',
-                  style: const TextStyle(
-                    color: AppColors.accentSoft,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
         ),
       ),
+    );
+  }
+}
+
+class _RoundButton extends StatelessWidget {
+  const _RoundButton({
+    required this.icon,
+    required this.tooltip,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String tooltip;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: AppColors.surface.withValues(alpha: 0.85),
+      shape: const CircleBorder(side: BorderSide(color: AppColors.line)),
+      child: IconButton(icon: Icon(icon), tooltip: tooltip, onPressed: onTap),
     );
   }
 }

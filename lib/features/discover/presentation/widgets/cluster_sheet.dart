@@ -43,21 +43,9 @@ class ClusterSheet extends StatelessWidget {
                 AppSpacing.lg,
                 AppSpacing.sm,
               ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      cluster.label,
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
-                  ),
-                  Text(
-                    '${cluster.count}',
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                ],
-              ),
+              child: _SheetHeader(cluster: cluster),
             ),
+            const Divider(height: 1),
             Flexible(
               child: ListView.builder(
                 shrinkWrap: true,
@@ -80,6 +68,57 @@ class ClusterSheet extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _SheetHeader extends StatelessWidget {
+  const _SheetHeader({required this.cluster});
+
+  final StationCluster cluster;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    final languageCode = Localizations.localeOf(context).languageCode;
+    final station = cluster.primary;
+    final flag = Country.flagEmoji(station.countryCode);
+    final country = Country.localizedName(
+      alpha2: station.countryCode,
+      fallback: station.country,
+      languageCode: languageCode,
+    );
+    final region = station.stateRegion;
+    final hasRegion = region != null && region.isNotEmpty;
+    return Row(
+      children: [
+        if (flag.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(right: AppSpacing.md),
+            child: Text(flag, style: const TextStyle(fontSize: 26)),
+          ),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                hasRegion ? region : country,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: textTheme.titleLarge,
+              ),
+              if (hasRegion)
+                Text(
+                  country,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: textTheme.bodySmall,
+                ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

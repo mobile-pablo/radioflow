@@ -13,8 +13,10 @@ class MapCubit extends Cubit<MapState> {
   MapCubit(this._repository) : super(const MapState());
 
   final StationRepository _repository;
+  final math.Random _random = math.Random();
 
   static const double _initialZoom = 2.5;
+  static const double _globeZoom = 2;
 
   Future<void> load() async {
     emit(state.copyWith(status: MapStatus.loading));
@@ -25,11 +27,17 @@ class MapCubit extends Cubit<MapState> {
           status: MapStatus.ready,
           stations: stations,
           clusters: _cluster(stations, _initialZoom),
+          globeClusters: _cluster(stations, _globeZoom),
         ),
       );
     } on Failure {
       emit(state.copyWith(status: MapStatus.failure));
     }
+  }
+
+  Station? randomStation() {
+    if (state.stations.isEmpty) return null;
+    return state.stations[_random.nextInt(state.stations.length)];
   }
 
   void onZoomChanged(double zoom) {
