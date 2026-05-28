@@ -20,5 +20,23 @@
   "discoverStations": "Discover stations",
   "favoriteAdd": "Add favorite",
   "favoriteRemove": "Remove favorite",
-  "offline": "You're offline"
+  "offline": "You're offline",
+  "settings": "Settings",
+  "language": "Language",
+  "languageSystem": "System default",
+  "about": "About",
+  "aboutData": "Station data by Radio Browser",
+  "aboutMap": "Map by OpenStreetMap and CARTO",
+  "surprise": "Surprise me",
+  "mapView": "Map view",
+  "globeView": "Globe view",
+  "sleepTimer": "Sleep timer",
+  "sleepOff": "Off",
+  "sleepMinutes": "{count} min",
+  "@sleepMinutes": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "openHomepage": "Station homepage"
 }

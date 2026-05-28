@@ -8,6 +8,7 @@ import '../features/connectivity/connectivity_cubit.dart';
 import '../features/favorites/bloc/favorites_cubit.dart';
 import '../features/player/audio/audio_controller.dart';
 import '../features/player/bloc/player_bloc.dart';
+import '../features/settings/bloc/settings_cubit.dart';
 
 final GetIt getIt = GetIt.instance;
 
@@ -37,5 +38,8 @@ Future<void> configureDependencies() async {
     )
     ..registerLazySingleton<ConnectivityCubit>(
       () => ConnectivityCubit(Connectivity()),
+    )
+    ..registerLazySingleton<SettingsCubit>(
+      () => SettingsCubit(getIt<SettingsRepository>())..load(),
     );
 }

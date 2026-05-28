@@ -20,5 +20,23 @@
   "discoverStations": "Explorar emisoras",
   "favoriteAdd": "Añadir a favoritos",
   "favoriteRemove": "Quitar de favoritos",
-  "offline": "Sin conexión"
+  "offline": "Sin conexión",
+  "settings": "Ajustes",
+  "language": "Idioma",
+  "languageSystem": "Predeterminado del sistema",
+  "about": "Acerca de",
+  "aboutData": "Datos de emisoras de Radio Browser",
+  "aboutMap": "Mapa de OpenStreetMap y CARTO",
+  "surprise": "Sorpréndeme",
+  "mapView": "Vista de mapa",
+  "globeView": "Vista de globo",
+  "sleepTimer": "Temporizador",
+  "sleepOff": "Apagado",
+  "sleepMinutes": "{count} min",
+  "@sleepMinutes": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "openHomepage": "Sitio de la emisora"
 }
