@@ -121,7 +121,7 @@ melos:
         dirExists: test
     gen:
       description: Run build_runner in packages that depend on it (in dependency order).
-      run: dart run build_runner build --delete-conflicting-outputs
+      run: dart run build_runner build
       exec:
         orderDependents: true
       packageFilters:

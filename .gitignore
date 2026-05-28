@@ -36,6 +36,11 @@ migrate_working_dir/
 /build/
 /coverage/
 
+# Generated code (build_runner: freezed, json_serializable, auto_mappr)
+*.freezed.dart
+*.g.dart
+*.mapper.dart
+
 # Symbolication related
 app.*.symbols
 
