@@ -21,6 +21,12 @@ version: 1.0.0+1
 environment:
   sdk: ^3.10.4
 
+# Melos / Dart pub workspace. Layered packages live under packages/.
+workspace:
+  - packages/core
+  - packages/domain
+  - packages/data
+
 # Dependencies specify other packages that your package needs in order to work.
 # To automatically upgrade your package dependencies to the latest versions
 # consider running `flutter pub upgrade --major-versions`. Alternatively,
@@ -35,9 +41,20 @@ dependencies:
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
 
+  # Workspace packages (layered architecture).
+  core:
+    path: packages/core
+  domain:
+    path: packages/domain
+  data:
+    path: packages/data
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
+
+  # Monorepo task runner (Dart pub workspaces).
+  melos: ^7.1.0
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is
@@ -87,3 +104,25 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+
+# Melos configuration (Dart pub workspaces). Run with `dart run melos run <name>`.
+melos:
+  scripts:
+    analyze:
+      description: Analyze all packages in the workspace.
+      run: dart analyze .
+    format:
+      description: Format all Dart code.
+      run: dart format .
+    test:
+      description: Run tests in every package that has a test/ directory.
+      run: flutter test
+      packageFilters:
+        dirExists: test
+    gen:
+      description: Run build_runner in packages that depend on it (in dependency order).
+      run: dart run build_runner build --delete-conflicting-outputs
+      exec:
+        orderDependents: true
+      packageFilters:
+        dependsOn: build_runner
