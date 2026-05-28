@@ -29,6 +29,23 @@ class _Map3dViewState extends State<Map3dView> {
   CircleAnnotationManager? _manager;
   final Map<String, StationCluster> _byAnnotation = {};
   double _zoom = 1.5;
+  int _syncGeneration = 0;
+
+  // Built once so rebuilds never re-apply the initial camera (which would
+  // make the map jump back). Annotations are updated imperatively instead.
+  late final MapWidget _mapWidget = MapWidget(
+    key: const ValueKey('discoverGlobe'),
+    styleUri: MapboxStyles.SATELLITE,
+    viewport: CameraViewportState(
+      center: Point(coordinates: Position(0, 20)),
+      zoom: 1.5,
+    ),
+    onMapCreated: _onMapCreated,
+    onCameraChangeListener: (data) {
+      _zoom = data.cameraState.zoom;
+      widget.onZoom(_zoom);
+    },
+  );
 
   @override
   void didUpdateWidget(Map3dView oldWidget) {
@@ -94,10 +111,13 @@ class _Map3dViewState extends State<Map3dView> {
   Future<void> _syncAnnotations() async {
     final manager = _manager;
     if (manager == null) return;
+    final clusters = widget.clusters;
+    final generation = ++_syncGeneration;
     await manager.deleteAll();
+    if (generation != _syncGeneration || !mounted) return;
     _byAnnotation.clear();
     final options = [
-      for (final cluster in widget.clusters)
+      for (final cluster in clusters)
         CircleAnnotationOptions(
           geometry: Point(
             coordinates: Position(
@@ -112,9 +132,13 @@ class _Map3dViewState extends State<Map3dView> {
         ),
     ];
     final created = await manager.createMulti(options);
-    for (var i = 0; i < created.length; i++) {
+    if (generation != _syncGeneration || !mounted) return;
+    final count = created.length < clusters.length
+        ? created.length
+        : clusters.length;
+    for (var i = 0; i < count; i++) {
       final annotation = created[i];
-      if (annotation != null) _byAnnotation[annotation.id] = widget.clusters[i];
+      if (annotation != null) _byAnnotation[annotation.id] = clusters[i];
     }
   }
 
@@ -135,19 +159,5 @@ class _Map3dViewState extends State<Map3dView> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return MapWidget(
-      key: const ValueKey('discoverGlobe'),
-      styleUri: MapboxStyles.SATELLITE,
-      viewport: CameraViewportState(
-        center: Point(coordinates: Position(0, 20)),
-        zoom: 1.5,
-      ),
-      onMapCreated: _onMapCreated,
-      onCameraChangeListener: (data) {
-        _zoom = data.cameraState.zoom;
-        widget.onZoom(_zoom);
-      },
-    );
-  }
+  Widget build(BuildContext context) => _mapWidget;
 }
