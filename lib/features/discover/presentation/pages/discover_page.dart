@@ -15,7 +15,7 @@ import '../../bloc/map_cubit.dart';
 import '../../bloc/station_cluster.dart';
 import '../widgets/cluster_sheet.dart';
 import '../widgets/filter_sheet.dart';
-import '../widgets/rotating_globe.dart';
+import '../widgets/map3d_view.dart';
 import '../widgets/station_search_delegate.dart';
 
 class DiscoverPage extends StatelessWidget {
@@ -122,9 +122,11 @@ class _DiscoverViewState extends State<_DiscoverView>
           children: [
             Positioned.fill(
               child: _showGlobe
-                  ? RotatingGlobe(
-                      clusters: state.globeClusters,
-                      onTapCluster: _onClusterTap,
+                  ? Map3dView(
+                      stations: state.stations,
+                      onStationTap: (station) => context.read<PlayerBloc>().add(
+                        PlayStationRequested(station),
+                      ),
                     )
                   : _buildMap(context, state),
             ),
