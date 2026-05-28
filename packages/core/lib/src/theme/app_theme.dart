@@ -7,7 +7,10 @@ import 'app_typography.dart';
 abstract final class AppTheme {
   const AppTheme._();
 
-  static ThemeData get dark {
+  static ThemeData get dark => from();
+
+  static ThemeData from({bool pureBlack = false}) {
+    final background = pureBlack ? AppColors.ink : AppColors.bg0;
     const colorScheme = ColorScheme.dark(
       primary: AppColors.accent,
       onPrimary: AppColors.ink,
@@ -29,8 +32,8 @@ abstract final class AppTheme {
       useMaterial3: true,
       brightness: Brightness.dark,
       colorScheme: colorScheme,
-      scaffoldBackgroundColor: AppColors.ink,
-      canvasColor: AppColors.ink,
+      scaffoldBackgroundColor: background,
+      canvasColor: background,
       textTheme: textTheme,
       dividerColor: AppColors.line,
       splashColor: AppColors.accent.withValues(alpha: 0.12),

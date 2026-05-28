@@ -17,6 +17,7 @@ class StationRepositoryImpl implements StationRepository {
     String query = '',
     StationSort sort = StationSort.popularity,
     int limit = 1000,
+    int minBitrate = 0,
   }) {
     return _guard(() async {
       final dtos = await _api.searchStations(
@@ -26,7 +27,11 @@ class StationRepositoryImpl implements StationRepository {
         limit: limit,
         hideBroken: true,
       );
-      return _toStations(dtos);
+      final stations = _toStations(dtos);
+      if (minBitrate <= 0) return stations;
+      return stations
+          .where((s) => (s.bitrate ?? 0) >= minBitrate)
+          .toList();
     });
   }
 

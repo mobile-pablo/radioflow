@@ -31,7 +31,7 @@ class RadioFlowApp extends StatelessWidget {
           return MaterialApp.router(
             onGenerateTitle: (context) => AppLocalizations.of(context).appTitle,
             debugShowCheckedModeBanner: false,
-            theme: AppTheme.dark,
+            theme: AppTheme.from(pureBlack: settings.pureBlack),
             locale: settings.locale,
             localizationsDelegates: AppLocalizations.localizationsDelegates,
             supportedLocales: AppLocalizations.supportedLocales,

@@ -10,6 +10,7 @@ import '../../../../app/di.dart';
 import '../../../../shared/widgets/station_tile.dart';
 import '../../../favorites/widgets/favorite_button.dart';
 import '../../../player/bloc/player_bloc.dart';
+import '../../../settings/bloc/settings_cubit.dart';
 import '../../bloc/stations_bloc.dart';
 
 class StationsPage extends StatelessWidget {
@@ -17,13 +18,24 @@ class StationsPage extends StatelessWidget {
 
   static const String path = '/stations';
 
+  static int _bitrateFor(bool highQuality) => highQuality ? 128 : 0;
+
   @override
   Widget build(BuildContext context) {
     return BlocProvider<StationsBloc>(
-      create: (_) =>
-          StationsBloc(getIt<StationRepository>())
-            ..add(const StationsRequested()),
-      child: const _StationsView(),
+      create: (_) => StationsBloc(
+        getIt<StationRepository>(),
+        minBitrate: _bitrateFor(
+          context.read<SettingsCubit>().state.highQuality,
+        ),
+      )..add(const StationsRequested()),
+      child: BlocListener<SettingsCubit, SettingsState>(
+        listenWhen: (a, b) => a.highQuality != b.highQuality,
+        listener: (context, settings) => context.read<StationsBloc>().add(
+          StationsMinBitrateChanged(_bitrateFor(settings.highQuality)),
+        ),
+        child: const _StationsView(),
+      ),
     );
   }
 }

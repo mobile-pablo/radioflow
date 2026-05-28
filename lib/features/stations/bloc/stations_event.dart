@@ -32,3 +32,12 @@ final class StationsSortChanged extends StationsEvent {
   @override
   List<Object?> get props => [sort];
 }
+
+final class StationsMinBitrateChanged extends StationsEvent {
+  const StationsMinBitrateChanged(this.minBitrate);
+
+  final int minBitrate;
+
+  @override
+  List<Object?> get props => [minBitrate];
+}

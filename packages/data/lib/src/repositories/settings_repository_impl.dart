@@ -15,4 +15,13 @@ class SettingsRepositoryImpl implements SettingsRepository {
   Future<void> setLocaleCode(String localeCode) async {
     await _prefs.setString(_localeKey, localeCode);
   }
+
+  @override
+  Future<bool> getFlag(String key, {required bool fallback}) async =>
+      _prefs.getBool(key) ?? fallback;
+
+  @override
+  Future<void> setFlag(String key, {required bool value}) async {
+    await _prefs.setBool(key, value);
+  }
 }

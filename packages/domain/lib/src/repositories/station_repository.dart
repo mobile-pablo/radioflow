@@ -6,6 +6,7 @@ abstract interface class StationRepository {
     String query = '',
     StationSort sort = StationSort.popularity,
     int limit = 1000,
+    int minBitrate = 0,
   });
 
   Future<List<Station>> getStationsWithGeo({int limit = 3000});
