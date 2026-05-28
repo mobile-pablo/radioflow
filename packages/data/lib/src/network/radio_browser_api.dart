@@ -12,6 +12,8 @@ abstract class RadioBrowserApi {
   @GET('/json/stations/search')
   Future<List<StationDto>> searchStations({
     @Query('name') String? name,
+    @Query('tag') String? tag,
+    @Query('countrycode') String? countryCode,
     @Query('order') String? order,
     @Query('reverse') bool? reverse,
     @Query('limit') int? limit,

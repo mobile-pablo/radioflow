@@ -15,6 +15,8 @@ class StationRepositoryImpl implements StationRepository {
   @override
   Future<List<Station>> getStations({
     String query = '',
+    String tag = '',
+    String countryCode = '',
     StationSort sort = StationSort.popularity,
     int limit = 1000,
     int minBitrate = 0,
@@ -22,6 +24,8 @@ class StationRepositoryImpl implements StationRepository {
     return _guard(() async {
       final dtos = await _api.searchStations(
         name: query.isEmpty ? null : query,
+        tag: tag.isEmpty ? null : tag,
+        countryCode: countryCode.isEmpty ? null : countryCode,
         order: _order(sort),
         reverse: sort != StationSort.name,
         limit: limit,

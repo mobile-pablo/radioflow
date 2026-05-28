@@ -1,10 +1,10 @@
 import 'package:go_router/go_router.dart';
 
+import '../features/browse/presentation/pages/browse_page.dart';
 import '../features/discover/presentation/pages/discover_page.dart';
 import '../features/favorites/presentation/pages/favorites_page.dart';
 import '../features/search/presentation/pages/search_page.dart';
 import '../features/settings/presentation/pages/settings_page.dart';
-import '../features/stations/presentation/pages/stations_page.dart';
 import 'widgets/home_shell.dart';
 
 final GoRouter appRouter = GoRouter(
@@ -33,8 +33,8 @@ final GoRouter appRouter = GoRouter(
         StatefulShellBranch(
           routes: [
             GoRoute(
-              path: StationsPage.path,
-              builder: (context, state) => const StationsPage(),
+              path: BrowsePage.path,
+              builder: (context, state) => const BrowsePage(),
             ),
           ],
         ),

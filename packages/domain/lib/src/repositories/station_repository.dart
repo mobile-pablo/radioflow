@@ -4,6 +4,8 @@ import '../entities/station_sort.dart';
 abstract interface class StationRepository {
   Future<List<Station>> getStations({
     String query = '',
+    String tag = '',
+    String countryCode = '',
     StationSort sort = StationSort.popularity,
     int limit = 1000,
     int minBitrate = 0,

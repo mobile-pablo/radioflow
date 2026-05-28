@@ -7,6 +7,8 @@
   "navExplore": "Explore",
   "navBrowse": "Browse",
   "navSearch": "Search",
+  "navCategories": "Categories",
+  "navCountries": "Countries",
   "searchHint": "Search stations, genres",
   "sortPopular": "Most popular",
   "sortVotes": "Top voted",
