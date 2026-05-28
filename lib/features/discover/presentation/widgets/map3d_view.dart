@@ -29,9 +29,10 @@ class _Map3dViewState extends State<Map3dView> {
         surface: const AssetImage('assets/textures/earth.jpg'),
         isRotating: true,
         rotationSpeed: 0.05,
-        zoom: 0.5,
+        zoom: 1,
         minZoom: 0.1,
-        maxZoom: 4,
+        maxZoom: 30,
+        zoomSensitivity: 1.2,
         isBackgroundFollowingSphereRotation: true,
       );
 
