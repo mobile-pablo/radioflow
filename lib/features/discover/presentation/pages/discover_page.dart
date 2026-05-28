@@ -1,7 +1,6 @@
 import 'package:core/core.dart';
 import 'package:domain/domain.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/scheduler.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:go_router/go_router.dart';
@@ -47,6 +46,7 @@ class _DiscoverViewState extends State<_DiscoverView>
     duration: const Duration(milliseconds: 900),
   );
   bool _showGlobe = false;
+  Station? _focusStation;
 
   @override
   void dispose() {
@@ -54,9 +54,23 @@ class _DiscoverViewState extends State<_DiscoverView>
     super.dispose();
   }
 
+  void _play(Station station) =>
+      context.read<PlayerBloc>().add(PlayStationRequested(station));
+
+  void _focusOn(Station station) {
+    _play(station);
+    final geo = station.geo;
+    if (geo == null) return;
+    if (_showGlobe) {
+      setState(() => _focusStation = station);
+    } else {
+      _flyTo(LatLng(geo.latitude, geo.longitude));
+    }
+  }
+
   void _onClusterTap(StationCluster cluster) {
     if (cluster.isSingle) {
-      context.read<PlayerBloc>().add(PlayStationRequested(cluster.primary));
+      _play(cluster.primary);
     } else {
       ClusterSheet.show(context, cluster);
     }
@@ -64,9 +78,7 @@ class _DiscoverViewState extends State<_DiscoverView>
 
   void _onRandom() {
     final station = context.read<MapCubit>().randomStation();
-    if (station != null) {
-      context.read<PlayerBloc>().add(PlayStationRequested(station));
-    }
+    if (station != null) _focusOn(station);
   }
 
   Future<void> _openSearch() async {
@@ -78,13 +90,7 @@ class _DiscoverViewState extends State<_DiscoverView>
       ),
     );
     if (station == null || !mounted) return;
-    context.read<PlayerBloc>().add(PlayStationRequested(station));
-    final geo = station.geo;
-    if (geo == null) return;
-    if (_showGlobe) setState(() => _showGlobe = false);
-    SchedulerBinding.instance.addPostFrameCallback((_) {
-      _flyTo(LatLng(geo.latitude, geo.longitude));
-    });
+    _focusOn(station);
   }
 
   void _flyTo(LatLng destination, {double destinationZoom = 6}) {
@@ -123,8 +129,11 @@ class _DiscoverViewState extends State<_DiscoverView>
             Positioned.fill(
               child: _showGlobe
                   ? Map3dView(
-                      clusters: state.globeClusters,
-                      onTapCluster: _onClusterTap,
+                      clusters: state.clusters,
+                      onPlay: _play,
+                      onZoom: (zoom) =>
+                          context.read<MapCubit>().onZoomChanged(zoom),
+                      focus: _focusStation,
                     )
                   : _buildMap(context, state),
             ),
