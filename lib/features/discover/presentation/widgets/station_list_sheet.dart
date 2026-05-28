@@ -144,7 +144,9 @@ class StationListSheet extends StatelessWidget {
                 _SectionHeader(title: l10n.nearbyStations),
                 for (final s in nearby) _StationRow(station: s, queue: nearby),
               ],
-              const SizedBox(height: AppSpacing.xl),
+              SizedBox(
+                height: AppSpacing.xl + MediaQuery.of(context).padding.bottom,
+              ),
             ],
           ),
         );

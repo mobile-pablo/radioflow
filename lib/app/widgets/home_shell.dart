@@ -32,27 +32,13 @@ class HomeShell extends StatelessWidget {
         if (station != null) context.read<RecentsCubit>().push(station);
       },
       child: Scaffold(
-        body: Stack(
+        body: Column(
           children: [
-            Column(
-              children: [
-                const OfflineBanner(),
-                Expanded(child: navigationShell),
-              ],
-            ),
-            Positioned(
-              left: 0,
-              right: 0,
-              bottom: 0,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const CityBar(),
-                  const MiniPlayer(),
-                  FloatingNavBar(navigationShell: navigationShell),
-                ],
-              ),
-            ),
+            const OfflineBanner(),
+            Expanded(child: navigationShell),
+            const CityBar(),
+            const MiniPlayer(),
+            FloatingNavBar(navigationShell: navigationShell),
           ],
         ),
       ),

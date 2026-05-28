@@ -33,6 +33,7 @@ class ShareSheet extends StatelessWidget {
         ? null
         : '${station!.name} · ${station!.homepage ?? station!.streamUrl}';
     return SafeArea(
+      top: false,
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.md),
         child: Column(

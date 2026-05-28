@@ -27,11 +27,13 @@ class SleepTimerPage extends StatelessWidget {
             ],
           ),
         ),
-        body: BlocBuilder<PlayerBloc, PlayerState>(
-          buildWhen: (a, b) => a.sleepMinutes != b.sleepMinutes,
-          builder: (context, state) {
-            final active = state.sleepMinutes;
-            return ListView(
+        body: SafeArea(
+          top: false,
+          child: BlocBuilder<PlayerBloc, PlayerState>(
+            buildWhen: (a, b) => a.sleepMinutes != b.sleepMinutes,
+            builder: (context, state) {
+              final active = state.sleepMinutes;
+              return ListView(
               padding: const EdgeInsets.all(AppSpacing.xl),
               children: [
                 if (active != null) _Hero(minutes: active),
@@ -68,7 +70,8 @@ class SleepTimerPage extends StatelessWidget {
           },
         ),
       ),
-    );
+    ),
+  );
   }
 }
 

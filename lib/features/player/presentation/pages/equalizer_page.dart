@@ -79,11 +79,14 @@ class _EqualizerPageState extends State<EqualizerPage> {
             TextButton(onPressed: _reset, child: Text(l10n.reset)),
         ],
       ),
-      body: !Platform.isAndroid
-          ? _Unavailable(message: l10n.equalizerUnavailable)
-          : _params == null
-          ? const Center(child: CircularProgressIndicator())
-          : _content(context, _params!),
+      body: SafeArea(
+        top: false,
+        child: !Platform.isAndroid
+            ? _Unavailable(message: l10n.equalizerUnavailable)
+            : _params == null
+            ? const Center(child: CircularProgressIndicator())
+            : _content(context, _params!),
+      ),
     );
   }
 
