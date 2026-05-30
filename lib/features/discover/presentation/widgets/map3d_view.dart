@@ -160,8 +160,8 @@ class _Map3dViewState extends State<Map3dView> {
           id: _sourceId,
           data: data,
           cluster: true,
-          clusterRadius: 38,
-          clusterMaxZoom: 14,
+          clusterRadius: 20,
+          clusterMaxZoom: 18,
         ),
       );
       await map.style.addLayer(
