@@ -43,14 +43,6 @@ class _Map3dViewState extends State<Map3dView> {
     _armed = !widget.locked;
   }
 
-  @override
-  void didUpdateWidget(Map3dView oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.locked != widget.locked) {
-      _armed = !widget.locked;
-    }
-  }
-
   late final MapWidget _mapWidget = MapWidget(
     key: const ValueKey('discoverGlobe'),
     styleUri: MapboxStyles.SATELLITE,
@@ -117,6 +109,9 @@ class _Map3dViewState extends State<Map3dView> {
     if (!identical(oldWidget.stations, widget.stations)) _publishStations();
     if (widget.focus != null && oldWidget.focus != widget.focus) {
       _flyToStation(widget.focus!);
+    }
+    if (oldWidget.locked != widget.locked) {
+      _armed = !widget.locked;
     }
   }
 
