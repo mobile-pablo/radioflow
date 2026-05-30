@@ -145,11 +145,20 @@ class _Map3dViewState extends State<Map3dView> {
     if (widget.focus != null) _flyToStation(widget.focus!);
   }
 
-  String _featureCollection() {
+  String _featureCollection({({double minLat, double maxLat, double minLng, double maxLng})? bounds}) {
     _byUuid.clear();
     final features = <Map<String, Object?>>[];
 
-    final stationsToShow = widget.stations.where((s) => s.geo != null);
+    var stationsToShow = widget.stations.where((s) => s.geo != null);
+
+    if (bounds != null) {
+      stationsToShow = stationsToShow.where((s) {
+        final lat = s.geo!.latitude;
+        final lng = s.geo!.longitude;
+        return lat >= bounds.minLat && lat <= bounds.maxLat &&
+               lng >= bounds.minLng && lng <= bounds.maxLng;
+      });
+    }
 
     for (final station in stationsToShow) {
       final geo = station.geo!;
@@ -170,7 +179,14 @@ class _Map3dViewState extends State<Map3dView> {
     final map = _map;
     if (map == null || !_sourceReady) return;
     try {
-      final data = _featureCollection();
+      final size = await map.getSize();
+      final bounds = await map.getVisibleRegion();
+      final data = _featureCollection(bounds: (
+        minLat: bounds.south,
+        maxLat: bounds.north,
+        minLng: bounds.west,
+        maxLng: bounds.east,
+      ));
       await map.style.setStyleSourceProperty(_sourceId, 'data', data);
     } on Object {
       return;
