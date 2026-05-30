@@ -51,13 +51,34 @@ class _Map3dViewState extends State<Map3dView> {
       zoom: 1.5,
     ),
     onMapCreated: _onMapCreated,
-    onCameraChangeListener: (data) => _zoom = data.cameraState.zoom,
+    onCameraChangeListener: (data) {
+      _zoom = data.cameraState.zoom;
+      _updateVisibleStations();
+    },
     onMapIdleListener: (_) => _maybeTune(),
     // ignore: deprecated_member_use
     onScrollListener: (_) => _armed = true,
     // ignore: deprecated_member_use
     onTapListener: _onTap,
   );
+
+  Future<void> _updateVisibleStations() async {
+    final map = _map;
+    if (map == null || !_sourceReady) return;
+    try {
+      final bounds = await map.getBounds();
+      if (bounds == null) return;
+      final data = _featureCollection({
+        'minLat': bounds.southwest.latitude,
+        'maxLat': bounds.northeast.latitude,
+        'minLng': bounds.southwest.longitude,
+        'maxLng': bounds.northeast.longitude,
+      });
+      await map.style.setStyleSourceProperty(_sourceId, 'data', data);
+    } on Object {
+      return;
+    }
+  }
 
   Future<void> _maybeTune() async {
     final map = _map;
@@ -136,11 +157,25 @@ class _Map3dViewState extends State<Map3dView> {
     if (widget.focus != null) _flyToStation(widget.focus!);
   }
 
-  String _featureCollection() {
+  String _featureCollection([Map<String, double>? bounds]) {
     _byUuid.clear();
     final features = <Map<String, Object?>>[];
-    final geoStations = widget.stations.where((s) => s.geo != null).take(2000);
-    for (final station in geoStations) {
+
+    List<Station> stationsToShow;
+    if (bounds != null) {
+      stationsToShow = widget.stations.where((s) {
+        final geo = s.geo;
+        if (geo == null) return false;
+        return geo.latitude >= bounds['minLat']! &&
+            geo.latitude <= bounds['maxLat']! &&
+            geo.longitude >= bounds['minLng']! &&
+            geo.longitude <= bounds['maxLng']!;
+      }).toList();
+    } else {
+      stationsToShow = widget.stations.where((s) => s.geo != null).toList();
+    }
+
+    for (final station in stationsToShow) {
       final geo = station.geo!;
       _byUuid[station.uuid] = station;
       features.add({
