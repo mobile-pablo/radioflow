@@ -159,9 +159,7 @@ class _Map3dViewState extends State<Map3dView> {
         GeoJsonSource(
           id: _sourceId,
           data: data,
-          cluster: true,
-          clusterRadius: 20,
-          clusterMaxZoom: 18,
+          cluster: false,
         ),
       );
       await map.style.addLayer(
