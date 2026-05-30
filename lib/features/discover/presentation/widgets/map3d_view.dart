@@ -35,7 +35,6 @@ class _Map3dViewState extends State<Map3dView> {
   bool _sourceReady = false;
   late bool _armed;
   double _zoom = 1.5;
-  double _lastUpdateZoom = 1.5;
   final Map<String, Station> _byUuid = {};
 
   @override
@@ -54,10 +53,6 @@ class _Map3dViewState extends State<Map3dView> {
     onMapCreated: _onMapCreated,
     onCameraChangeListener: (data) {
       _zoom = data.cameraState.zoom;
-      if ((_zoom - _lastUpdateZoom).abs() > 0.5) {
-        _lastUpdateZoom = _zoom;
-        _updateVisibleStations();
-      }
     },
     onMapIdleListener: (_) => _maybeTune(),
     // ignore: deprecated_member_use
@@ -65,40 +60,6 @@ class _Map3dViewState extends State<Map3dView> {
     // ignore: deprecated_member_use
     onTapListener: _onTap,
   );
-
-  Future<void> _updateVisibleStations() async {
-    final map = _map;
-    if (map == null || !_sourceReady) return;
-    try {
-      final size = await map.getSize();
-      final w = size.width;
-      final h = size.height;
-
-      final topLeft = await map.coordinateForPixel(ScreenCoordinate(x: 0, y: 0));
-      final bottomRight = await map.coordinateForPixel(
-        ScreenCoordinate(x: w, y: h),
-      );
-
-      final minLat = math.min(topLeft.coordinates.lat.toDouble(),
-          bottomRight.coordinates.lat.toDouble());
-      final maxLat = math.max(topLeft.coordinates.lat.toDouble(),
-          bottomRight.coordinates.lat.toDouble());
-      final minLng = math.min(topLeft.coordinates.lng.toDouble(),
-          bottomRight.coordinates.lng.toDouble());
-      final maxLng = math.max(topLeft.coordinates.lng.toDouble(),
-          bottomRight.coordinates.lng.toDouble());
-
-      final data = _featureCollection({
-        'minLat': minLat,
-        'maxLat': maxLat,
-        'minLng': minLng,
-        'maxLng': maxLng,
-      });
-      await map.style.setStyleSourceProperty(_sourceId, 'data', data);
-    } on Object {
-      return;
-    }
-  }
 
   Future<void> _maybeTune() async {
     final map = _map;
@@ -178,23 +139,10 @@ class _Map3dViewState extends State<Map3dView> {
     if (widget.focus != null) _flyToStation(widget.focus!);
   }
 
-  String _featureCollection([Map<String, double>? bounds]) {
+  String _featureCollection() {
     _byUuid.clear();
     final features = <Map<String, Object?>>[];
-
-    List<Station> stationsToShow;
-    if (bounds != null) {
-      stationsToShow = widget.stations.where((s) {
-        final geo = s.geo;
-        if (geo == null) return false;
-        return geo.latitude >= bounds['minLat']! &&
-            geo.latitude <= bounds['maxLat']! &&
-            geo.longitude >= bounds['minLng']! &&
-            geo.longitude <= bounds['maxLng']!;
-      }).toList();
-    } else {
-      stationsToShow = widget.stations.where((s) => s.geo != null).toList();
-    }
+    final stationsToShow = widget.stations.where((s) => s.geo != null);
 
     for (final station in stationsToShow) {
       final geo = station.geo!;
