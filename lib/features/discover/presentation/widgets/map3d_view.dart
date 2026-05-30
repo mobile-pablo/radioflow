@@ -35,6 +35,7 @@ class _Map3dViewState extends State<Map3dView> {
   bool _sourceReady = false;
   late bool _armed;
   double _zoom = 1.5;
+  double _lastUpdateZoom = 1.5;
   final Map<String, Station> _byUuid = {};
 
   @override
@@ -45,7 +46,7 @@ class _Map3dViewState extends State<Map3dView> {
 
   late final MapWidget _mapWidget = MapWidget(
     key: const ValueKey('discoverGlobe'),
-    styleUri: MapboxStyles.OUTDOORS,
+    styleUri: MapboxStyles.SATELLITE,
     viewport: CameraViewportState(
       center: Point(coordinates: Position(0, 20)),
       zoom: 1.5,
@@ -53,7 +54,10 @@ class _Map3dViewState extends State<Map3dView> {
     onMapCreated: _onMapCreated,
     onCameraChangeListener: (data) {
       _zoom = data.cameraState.zoom;
-      _updateVisibleStations();
+      if ((_zoom - _lastUpdateZoom).abs() > 0.5) {
+        _lastUpdateZoom = _zoom;
+        _updateVisibleStations();
+      }
     },
     onMapIdleListener: (_) => _maybeTune(),
     // ignore: deprecated_member_use
@@ -169,6 +173,7 @@ class _Map3dViewState extends State<Map3dView> {
     await map.style.setProjection(
       StyleProjection(name: StyleProjectionName.globe),
     );
+    await Future.delayed(const Duration(milliseconds: 500));
     await _publishStations();
     if (widget.focus != null) _flyToStation(widget.focus!);
   }
