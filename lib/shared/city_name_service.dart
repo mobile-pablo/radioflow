@@ -2,10 +2,11 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:domain/domain.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class CityNameService {
   final Map<String, String> _cache = {};
-  final String _token = const String.fromEnvironment('MAPBOX_TOKEN');
+  late final String _token = dotenv.env['MAPBOX_TOKEN'] ?? const String.fromEnvironment('MAPBOX_TOKEN');
 
   Future<String?> cityFor(Station station) async {
     final geo = station.geo;
