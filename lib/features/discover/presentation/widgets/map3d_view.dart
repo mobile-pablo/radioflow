@@ -125,6 +125,11 @@ class _Map3dViewState extends State<Map3dView> {
     );
     await _publishStations();
     if (widget.focus != null) _flyToStation(widget.focus!);
+    if (!widget.locked) {
+      _armed = true;
+      await Future.delayed(const Duration(milliseconds: 500));
+      _maybeTune();
+    }
   }
 
   String _featureCollection() {
@@ -159,7 +164,9 @@ class _Map3dViewState extends State<Map3dView> {
         GeoJsonSource(
           id: _sourceId,
           data: data,
-          cluster: false,
+          cluster: true,
+          clusterRadius: 30,
+          clusterMaxZoom: 15,
         ),
       );
       await map.style.addLayer(
