@@ -66,13 +66,29 @@ class _Map3dViewState extends State<Map3dView> {
     final map = _map;
     if (map == null || !_sourceReady) return;
     try {
-      final bounds = await map.getBounds();
-      if (bounds == null) return;
+      final size = await map.getSize();
+      final w = size.width;
+      final h = size.height;
+
+      final topLeft = await map.coordinateForPixel(ScreenCoordinate(x: 0, y: 0));
+      final bottomRight = await map.coordinateForPixel(
+        ScreenCoordinate(x: w, y: h),
+      );
+
+      final minLat = math.min(topLeft.coordinates.lat.toDouble(),
+          bottomRight.coordinates.lat.toDouble());
+      final maxLat = math.max(topLeft.coordinates.lat.toDouble(),
+          bottomRight.coordinates.lat.toDouble());
+      final minLng = math.min(topLeft.coordinates.lng.toDouble(),
+          bottomRight.coordinates.lng.toDouble());
+      final maxLng = math.max(topLeft.coordinates.lng.toDouble(),
+          bottomRight.coordinates.lng.toDouble());
+
       final data = _featureCollection({
-        'minLat': bounds.southwest.latitude,
-        'maxLat': bounds.northeast.latitude,
-        'minLng': bounds.southwest.longitude,
-        'maxLng': bounds.northeast.longitude,
+        'minLat': minLat,
+        'maxLat': maxLat,
+        'minLng': minLng,
+        'maxLng': maxLng,
       });
       await map.style.setStyleSourceProperty(_sourceId, 'data', data);
     } on Object {
