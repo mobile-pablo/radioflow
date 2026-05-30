@@ -103,7 +103,6 @@ class _Map3dViewState extends State<Map3dView> {
           !widget.locked &&
           nearest != null &&
           best <= radiusSq) {
-        widget.onPlay(nearest);
         widget.onCenterStation(nearest);
       }
     } on Object {
