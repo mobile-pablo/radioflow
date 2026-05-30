@@ -35,6 +35,7 @@ class _Map3dViewState extends State<Map3dView> {
   bool _sourceReady = false;
   late bool _armed;
   double _zoom = 1.5;
+  double _lastRenderZoom = 1.5;
   final Map<String, Station> _byUuid = {};
 
   @override
@@ -53,6 +54,10 @@ class _Map3dViewState extends State<Map3dView> {
     onMapCreated: _onMapCreated,
     onCameraChangeListener: (data) {
       _zoom = data.cameraState.zoom;
+      if ((_zoom - _lastRenderZoom).abs() >= 1.0) {
+        _lastRenderZoom = _zoom;
+        _updateStationsForZoom();
+      }
     },
     onMapIdleListener: (_) => _maybeTune(),
     // ignore: deprecated_member_use
@@ -142,6 +147,7 @@ class _Map3dViewState extends State<Map3dView> {
   String _featureCollection() {
     _byUuid.clear();
     final features = <Map<String, Object?>>[];
+
     final stationsToShow = widget.stations.where((s) => s.geo != null);
 
     for (final station in stationsToShow) {
@@ -157,6 +163,17 @@ class _Map3dViewState extends State<Map3dView> {
       });
     }
     return jsonEncode({'type': 'FeatureCollection', 'features': features});
+  }
+
+  Future<void> _updateStationsForZoom() async {
+    final map = _map;
+    if (map == null || !_sourceReady) return;
+    try {
+      final data = _featureCollection();
+      await map.style.setStyleSourceProperty(_sourceId, 'data', data);
+    } on Object {
+      return;
+    }
   }
 
   Future<void> _publishStations() async {
