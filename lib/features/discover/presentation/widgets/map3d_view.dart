@@ -33,9 +33,23 @@ class _Map3dViewState extends State<Map3dView> {
 
   MapboxMap? _map;
   bool _sourceReady = false;
-  bool _armed = false;
+  late bool _armed;
   double _zoom = 1.5;
   final Map<String, Station> _byUuid = {};
+
+  @override
+  void initState() {
+    super.initState();
+    _armed = !widget.locked;
+  }
+
+  @override
+  void didUpdateWidget(Map3dView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.locked != widget.locked) {
+      _armed = !widget.locked;
+    }
+  }
 
   late final MapWidget _mapWidget = MapWidget(
     key: const ValueKey('discoverGlobe'),
@@ -125,11 +139,6 @@ class _Map3dViewState extends State<Map3dView> {
     );
     await _publishStations();
     if (widget.focus != null) _flyToStation(widget.focus!);
-    if (!widget.locked) {
-      _armed = true;
-      await Future.delayed(const Duration(milliseconds: 500));
-      _maybeTune();
-    }
   }
 
   String _featureCollection() {
