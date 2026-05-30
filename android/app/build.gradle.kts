@@ -28,6 +28,19 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+
+        // Read Dart defines from .env file
+        val envFile = rootProject.file(".env")
+        if (envFile.exists()) {
+            envFile.forEachLine { line ->
+                if (line.isNotEmpty() && !line.startsWith("#")) {
+                    val parts = line.split("=", limit = 2)
+                    if (parts.size == 2) {
+                        buildConfigField("String", parts[0], "\"${parts[1]}\"")
+                    }
+                }
+            }
+        }
     }
 
     buildTypes {
