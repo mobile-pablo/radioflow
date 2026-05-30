@@ -45,7 +45,7 @@ class _Map3dViewState extends State<Map3dView> {
 
   late final MapWidget _mapWidget = MapWidget(
     key: const ValueKey('discoverGlobe'),
-    styleUri: MapboxStyles.SATELLITE,
+    styleUri: MapboxStyles.OUTDOORS,
     viewport: CameraViewportState(
       center: Point(coordinates: Position(0, 20)),
       zoom: 1.5,
