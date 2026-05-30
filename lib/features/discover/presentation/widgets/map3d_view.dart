@@ -180,12 +180,15 @@ class _Map3dViewState extends State<Map3dView> {
     if (map == null || !_sourceReady) return;
     try {
       final size = await map.getSize();
-      final bounds = await map.getVisibleRegion();
+      final nwCorner = await map.coordinateForPixel(ScreenCoordinate(x: 0, y: 0));
+      final seCorner = await map.coordinateForPixel(
+        ScreenCoordinate(x: size.width, y: size.height),
+      );
       final data = _featureCollection(bounds: (
-        minLat: bounds.south,
-        maxLat: bounds.north,
-        minLng: bounds.west,
-        maxLng: bounds.east,
+        minLat: seCorner.coordinates.lat.toDouble(),
+        maxLat: nwCorner.coordinates.lat.toDouble(),
+        minLng: nwCorner.coordinates.lng.toDouble(),
+        maxLng: seCorner.coordinates.lng.toDouble(),
       ));
       await map.style.setStyleSourceProperty(_sourceId, 'data', data);
     } on Object {
