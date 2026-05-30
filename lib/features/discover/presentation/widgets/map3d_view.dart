@@ -173,36 +173,6 @@ class _Map3dViewState extends State<Map3dView> {
       );
       await map.style.addLayer(
         CircleLayer(
-          id: _clusterLayer,
-          sourceId: _sourceId,
-          circleColor: 0xFF38E1B0,
-          circleRadius: 16,
-          circleStrokeColor: 0xFF001A12,
-          circleStrokeWidth: 1.5,
-        ),
-      );
-      await map.style.setStyleLayerProperty(
-        _clusterLayer,
-        'filter',
-        jsonEncode(['has', 'point_count']),
-      );
-      await map.style.setStyleLayerProperty(
-        _clusterLayer,
-        'circle-radius',
-        jsonEncode([
-          'step',
-          ['get', 'point_count'],
-          12,
-          10,
-          16,
-          50,
-          22,
-          200,
-          30,
-        ]),
-      );
-      await map.style.addLayer(
-        CircleLayer(
           id: _glowLayer,
           sourceId: _sourceId,
           circleColor: 0xFF38E1B0,
@@ -210,14 +180,6 @@ class _Map3dViewState extends State<Map3dView> {
           circleBlur: 1,
           circleOpacity: 0.45,
         ),
-      );
-      await map.style.setStyleLayerProperty(
-        _glowLayer,
-        'filter',
-        jsonEncode([
-          '!',
-          ['has', 'point_count'],
-        ]),
       );
       await map.style.addLayer(
         CircleLayer(
@@ -230,14 +192,6 @@ class _Map3dViewState extends State<Map3dView> {
           circleStrokeColor: 0xFF001A12,
           circleStrokeWidth: 0.5,
         ),
-      );
-      await map.style.setStyleLayerProperty(
-        _pointLayer,
-        'filter',
-        jsonEncode([
-          '!',
-          ['has', 'point_count'],
-        ]),
       );
       _sourceReady = true;
     } on Object {
