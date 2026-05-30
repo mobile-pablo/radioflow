@@ -40,7 +40,7 @@ class StationRepositoryImpl implements StationRepository {
   }
 
   @override
-  Future<List<Station>> getStationsWithGeo({int limit = 3000}) {
+  Future<List<Station>> getStationsWithGeo({int limit = 5000}) {
     return _guard(() async {
       final dtos = await _api.searchStations(
         order: 'clickcount',
