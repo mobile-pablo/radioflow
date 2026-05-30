@@ -6,10 +6,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:radioflow/l10n/app_localizations.dart';
 
-import '../../../app/di.dart';
+import '../../../../app/di.dart';
 import '../../../favorites/widgets/favorite_button.dart';
 import '../../../player/bloc/player_bloc.dart';
-import '../../../shared/city_name_service.dart';
+import '../../../../shared/city_name_service.dart';
 
 class StationListSheet extends StatelessWidget {
   const StationListSheet({
