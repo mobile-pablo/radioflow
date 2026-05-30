@@ -32,8 +32,14 @@ class AudioController {
               : null,
         ),
       ),
+    ).timeout(
+      const Duration(seconds: 10),
+      onTimeout: () => throw TimeoutException('Stream connection timeout'),
     );
-    await _player.play();
+    await _player.play().timeout(
+      const Duration(seconds: 5),
+      onTimeout: () => throw TimeoutException('Playback timeout'),
+    );
   }
 
   Future<void> pause() => _player.pause();

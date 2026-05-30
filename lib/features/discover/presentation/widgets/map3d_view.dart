@@ -160,7 +160,7 @@ class _Map3dViewState extends State<Map3dView> {
           id: _sourceId,
           data: data,
           cluster: true,
-          clusterRadius: 60,
+          clusterRadius: 38,
           clusterMaxZoom: 14,
         ),
       );
