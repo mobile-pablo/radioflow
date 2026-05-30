@@ -110,8 +110,8 @@ class _Map3dViewState extends State<Map3dView> {
     _map = map;
     final topPad = MediaQuery.of(context).padding.top;
     await map.scaleBar.updateSettings(ScaleBarSettings(enabled: false));
-    await map.logo.updateSettings(LogoSettings(enabled: false));
-    await map.attribution.updateSettings(AttributionSettings(enabled: false));
+    await map.logo.updateSettings(LogoSettings(enabled: true));
+    await map.attribution.updateSettings(AttributionSettings(enabled: true));
     await map.compass.updateSettings(
       CompassSettings(
         position: OrnamentPosition.TOP_LEFT,
